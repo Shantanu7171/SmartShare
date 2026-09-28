@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ target_user.username }}'s Profile - SmartShare{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+
+  <!-- Breadcrumbs -->
+  <div class="flex items-center justify-between text-xs text-charcoal-500">
+    <a href="{% url 'feed' %}" class="inline-flex items-center gap-2 hover:text-botanical-700 transition-colors font-bold">
+      <i class="fas fa-arrow-left text-[10px]"></i> Back to Feed
+    </a>
+  </div>
+
+  <!-- Profile Header Pebble Card -->
+  <div class="pebble-card p-6 sm:p-10 shadow-pebble relative overflow-hidden text-left">
+    
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+        <!-- Avatar -->
+        <div class="relative">
+          {% if target_user.avatar %}
+            <img src="{{ target_user.avatar.url }}" alt="{{ target_user.username }}" class="h-24 w-24 rounded-full object-cover border-4 border-botanical-300 shadow-md">
+          {% else %}
+            <div class="h-24 w-24 rounded-full bg-gradient-to-tr from-botanical-600 to-sage-500 text-white flex items-center justify-center font-bold text-3xl uppercase shadow-md">
+              {{ target_user.username|slice:":1" }}
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-botanical-100 text-botanical-800 border border-botanical-200">
+              {{ target_user.role }}
+            </span>
+            <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-ochre-100 text-ochre-800 border border-ochre-200">
+              🏆 {{ target_user.points }} Points
+            </span>
+          </div>
+
+          <h1 class="text-2xl sm:text-3xl font-serif font-black text-charcoal-900 leading-tight">
+            {{ target_user.username }}
+          </h1>
+
+          <div class="flex flex-wrap items-center gap-2 text-xs text-charcoal-600 pt-1 font-medium">
+            {% if target_user.branch %}
+              <span class="font-bold text-botanical-800"><i class="fas fa-graduation-cap text-botanical-600"></i> {{ target_user.branch }} (Sem {{ target_user.semester|default:"-" }})</span>
+            {% endif %}
+            {% if target_user.college %}
+              <span>• {{ target_user.college }}</span>
+            {% endif %}
+            {% if target_user.university %}
+              <span>• {{ target_user.university }}</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Moderation / Delete Account Action (Admin or University Faculty) -->
+      {% if can_moderate %}
+      <form method="POST" action="{% url 'delete_user_admin' target_user.id %}" onsubmit="return confirm('Are you sure you want to permanently delete user {{ target_user.username }}? This action cannot be undone.');">
+        {% csrf_token %}
+        <button 
+          type="submit"
+          class="px-5 py-2.5 bg-terracotta-50 hover:bg-terracotta-100 text-terracotta-700 font-bold text-xs rounded-full border border-terracotta-200 transition-colors flex items-center gap-2 shadow-sm"
+        >
+          <i class="fas fa-trash"></i>
+          <span>Delete User</span>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+
+    <!-- Bio -->
+    {% if target_user.bio %}
+    <div class="border-t border-cream-200 mt-6 pt-4">
+      <p class="text-xs text-charcoal-700 leading-relaxed font-medium">{{ target_user.bio }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Uploaded Study Materials by this User -->
+  <div class="space-y-6 text-left">
+    <h2 class="text-xl font-serif font-black text-charcoal-900 tracking-tight">Uploaded Courseware ({{ user_resources.count }})</h2>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for res in user_resources %}
+        {% include 'components/resource_card.html' with res=res %}
+      {% empty %}
+        <div class="col-span-3 text-center py-16 pebble-card p-8">
+          <i class="fas fa-folder-open text-3xl text-sage-400 mb-3 block"></i>
+          <h4 class="text-sm font-serif font-bold text-charcoal-800">This scholar hasn't uploaded any resources yet</h4>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

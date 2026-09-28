@@ -1,0 +1,195 @@
+/* SmartShare - Organic / Blob Design System */
+
+/* Root Variables */
+:root {
+  --radius-blob: 2rem;
+  --color-primary: #346845;
+  --color-cream-base: #FAF7F2;
+  --color-cream-card: #FFFDF9;
+  --color-mineral-border: #E8E2D5;
+}
+
+/* Base Typographic Hierarchy: Fraunces for headings, Quicksand/Urbanist for body */
+h1, h2, h3, h4, .font-display, .font-serif {
+  font-family: 'Fraunces', Georgia, serif;
+  font-optical-sizing: auto;
+  letter-spacing: -0.015em;
+}
+
+body {
+  font-family: 'Quicksand', 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #FAF7F2;
+  color: #232822;
+  line-height: 1.6;
+}
+
+/* Organic Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #FAF7F2;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #C8D8CE;
+  border-radius: 9999px;
+  border: 2px solid #FAF7F2;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8EA891;
+}
+
+/* Pebble Card Design Token */
+.pebble-card {
+  background-color: #FFFDF9;
+  border: 1px solid #EBE4D5;
+  border-radius: 2rem;
+  box-shadow: 0 16px 36px -8px rgba(52, 104, 69, 0.07), 0 4px 12px -2px rgba(0, 0, 0, 0.02);
+  transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pebble-card:hover {
+  border-color: #D4E2D8;
+  transform: translateY(-3px);
+  box-shadow: 0 22px 44px -8px rgba(52, 104, 69, 0.12), 0 8px 18px -2px rgba(0, 0, 0, 0.03);
+}
+
+/* Organic Glassmorphism */
+.pebble-glass {
+  background: rgba(255, 253, 249, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(235, 228, 213, 0.85);
+  border-radius: 2rem;
+}
+
+/* Pebble Form Input */
+.pebble-input {
+  background-color: #F3EFE6;
+  border: 1.5px solid #E5DDCF;
+  border-radius: 1.25rem;
+  color: #2B3026;
+  transition: all 0.2s ease;
+}
+
+.pebble-input:focus {
+  outline: none;
+  background-color: #FFFDF9;
+  border-color: #346845;
+  box-shadow: 0 0 0 4px rgba(52, 104, 69, 0.15);
+}
+
+/* Organic Blob Morph Animations (GPU Accelerated with translate3d) */
+@keyframes organicMorph {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate3d(24px, -18px, 0) rotate(6deg) scale(1.04);
+  }
+  100% {
+    transform: translate3d(-16px, 14px, 0) rotate(-4deg) scale(0.97);
+  }
+}
+
+@keyframes organicMorphDelayed {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate3d(-22px, 18px, 0) rotate(-5deg) scale(1.05);
+  }
+  100% {
+    transform: translate3d(14px, -14px, 0) rotate(4deg) scale(0.96);
+  }
+}
+
+.organic-blob-morph {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  border-radius: 58% 42% 38% 62% / 62% 38% 62% 38%;
+  animation: organicMorph 16s ease-in-out infinite alternate;
+}
+
+.organic-blob-morph-delayed {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  border-radius: 44% 56% 58% 42% / 52% 48% 52% 48%;
+  animation: organicMorphDelayed 20s ease-in-out infinite alternate;
+}
+
+/* Subtle Organic Floating */
+@keyframes organicFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-float-gentle {
+  animation: organicFloat 5s ease-in-out infinite;
+}
+
+/* Botanical Primary Pill Button */
+.btn-botanical {
+  background-color: #346845;
+  color: #FFFFFF;
+  border-radius: 9999px;
+  font-weight: 700;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 20px -4px rgba(52, 104, 69, 0.25);
+}
+
+.btn-botanical:hover {
+  background-color: #2A5538;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -4px rgba(52, 104, 69, 0.35);
+}
+
+.btn-botanical:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Modal Styling & Scrollbar */
+.custom-modal-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #C8D8CE transparent;
+}
+
+.custom-modal-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-modal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-modal-scroll::-webkit-scrollbar-thumb {
+  background: #D4E2D8;
+  border-radius: 9999px;
+}
+
+.custom-modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: #8EA891;
+}
+
+@keyframes modalScaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-animate-enter {
+  animation: modalScaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

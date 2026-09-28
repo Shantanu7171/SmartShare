@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Verify Email - SmartShare{% endblock %}
+
+{% block content %}
+<div class="relative min-h-[calc(100vh-9rem)] flex items-center justify-center px-4 py-12 overflow-hidden">
+  
+  <!-- Ambient Organic Blur Blobs -->
+  <div class="absolute -top-16 -left-16 w-80 h-80 rounded-full bg-ochre-300/40 filter blur-[70px] pointer-events-none organic-blob-morph"></div>
+  <div class="absolute top-12 -right-16 w-72 h-72 rounded-full bg-sage-300/45 filter blur-[60px] pointer-events-none organic-blob-morph-delayed"></div>
+  <div class="absolute -bottom-16 -right-16 w-96 h-96 rounded-full bg-terracotta-300/35 filter blur-[80px] pointer-events-none organic-blob-morph"></div>
+
+  <!-- Pebble Card Container -->
+  <div class="relative max-w-md w-full bg-[#FFFDF9] border border-cream-300 rounded-[2.25rem] p-8 sm:p-10 shadow-pebble text-left transition-all duration-300">
+    
+    <!-- Top Decorative Botanical Pill Bar -->
+    <div class="w-10 h-1.5 rounded-full bg-botanical-600 mb-4"></div>
+
+    <!-- Header -->
+    <div class="space-y-1 mb-6">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-botanical-50 border border-botanical-200 text-botanical-800 text-[11px] font-bold mb-1">
+        <i class="fas fa-envelope-open-text"></i>
+        <span>Email Verification Required</span>
+      </div>
+      <h1 class="text-2xl sm:text-3xl font-serif font-black text-charcoal-900 tracking-tight">
+        Verify your email
+      </h1>
+      <p class="text-xs text-charcoal-600 font-medium">
+        We have sent a 6-digit OTP code to:
+        <span class="font-bold text-charcoal-900 block mt-0.5 break-all" id="target-email-display">{{ email|default:"your email address" }}</span>
+      </p>
+    </div>
+
+    <!-- Error/Alert container -->
+    <div id="otp-error-alert" class="hidden mb-4 p-3.5 rounded-2xl bg-terracotta-50 border border-terracotta-200 text-xs font-bold text-terracotta-700 flex items-center gap-2.5">
+      <i class="fas fa-exclamation-circle text-terracotta-500 flex-shrink-0"></i>
+      <span id="otp-error-text"></span>
+    </div>
+
+    <div id="otp-success-alert" class="hidden mb-4 p-3.5 rounded-2xl bg-sage-50 border border-sage-200 text-xs font-bold text-botanical-800 flex items-center gap-2.5">
+      <i class="fas fa-check-circle text-botanical-600 flex-shrink-0"></i>
+      <span id="otp-success-text"></span>
+    </div>
+
+    <!-- OTP Form -->
+    <form method="POST" action="{% url 'verify_otp_web' %}" class="space-y-5" id="verify-otp-form" onsubmit="handleVerifySubmit(event)">
+      {% csrf_token %}
+      <input type="hidden" name="email" id="hidden-email" value="{{ email }}">
+
+      <!-- If email was not passed in URL/session, provide an email field -->
+      {% if not email %}
+      <div class="space-y-1.5">
+        <label for="email-input" class="text-xs font-bold text-charcoal-700 block">
+          Registered Email Address
+        </label>
+        <input 
+          type="email" 
+          name="email" 
+          id="email-input" 
+          required 
+          placeholder="your.email@college.edu" 
+          class="pebble-input w-full px-4 py-3 text-xs focus:bg-white"
+        >
+      </div>
+      {% endif %}
+
+      <!-- 6-digit OTP Input -->
+      <div class="space-y-2">
+        <label for="otp-input" class="text-xs font-bold text-charcoal-700 flex items-center justify-between">
+          <span>6-Digit Verification Code</span>
+          <span class="text-[11px] text-charcoal-500 font-normal">Valid for 10 min</span>
+        </label>
+        <div class="relative">
+          <input 
+            type="text" 
+            name="otp" 
+            id="otp-input" 
+            required 
+            maxlength="6"
+            pattern="[0-9]{6}"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            placeholder="123456" 
+            class="pebble-input w-full px-4 py-3.5 text-center text-2xl font-mono font-bold tracking-[0.4em] focus:bg-white placeholder:text-charcoal-300"
+            autofocus
+          >
+        </div>
+        <p class="text-[11px] text-charcoal-500">
+          Check your inbox or spam folder for the email from SmartShare.
+        </p>
+      </div>
+
+      <!-- Submit Button -->
+      <button 
+        type="submit" 
+        id="verify-submit-btn"
+        class="btn-botanical w-full py-3.5 rounded-full text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md"
+      >
+        <span>Verify & Activate Account</span>
+        <i class="fas fa-arrow-right text-[11px]"></i>
+      </button>
+
+      <!-- Resend Code Action -->
+      <div class="flex items-center justify-between pt-2 border-t border-cream-200 text-xs">
+        <span class="text-charcoal-600">Didn't receive code?</span>
+        <button 
+          type="button" 
+          id="resend-btn"
+          onclick="handleResendCode()" 
+          class="font-bold text-botanical-700 hover:text-botanical-800 hover:underline flex items-center gap-1 cursor-pointer"
+        >
+          <i class="fas fa-redo-alt text-[10px]" id="resend-icon"></i>
+          <span id="resend-text">Resend Code</span>
+        </button>
+      </div>
+
+      <!-- Back to Sign in -->
+      <div class="text-center pt-2">
+        <a href="{% url 'login' %}" class="text-xs font-medium text-charcoal-500 hover:text-charcoal-800">
+          <i class="fas fa-arrow-left mr-1 text-[10px]"></i> Back to Sign In
+        </a>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+  async function handleVerifySubmit(e) {
+    e.preventDefault();
+    const form = document.getElementById('verify-otp-form');
+    const submitBtn = document.getElementById('verify-submit-btn');
+    const errorAlert = document.getElementById('otp-error-alert');
+    const errorText = document.getElementById('otp-error-text');
+    const successAlert = document.getElementById('otp-success-alert');
+    const successText = document.getElementById('otp-success-text');
+
+    errorAlert.classList.add('hidden');
+    successAlert.classList.add('hidden');
+
+    const emailInput = document.getElementById('hidden-email') || document.getElementById('email-input');
+    const otpInput = document.getElementById('otp-input');
+    const email = emailInput ? emailInput.value.trim() : '';
+    const otp = otpInput ? otpInput.value.trim() : '';
+
+    if (!otp || otp.length !== 6) {
+      errorText.innerText = 'Please enter a complete 6-digit code.';
+      errorAlert.classList.remove('hidden');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> <span>Verifying...</span>';
+
+    try {
+      const response = await fetch("{% url 'verify_otp_web' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': window.getCsrfToken ? window.getCsrfToken() : '{{ csrf_token }}',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ email: email, otp: otp })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.status === 'success') {
+        if (window.setAuthSession) window.setAuthSession(data);
+        successText.innerText = data.detail || 'Email verified successfully!';
+        successAlert.classList.remove('hidden');
+        submitBtn.innerHTML = '<i class="fas fa-check"></i> <span>Activated! Redirecting...</span>';
+        setTimeout(() => {
+          window.location.href = data.redirect_url || "{% url 'feed' %}";
+        }, 800);
+      } else {
+        errorText.innerText = data.detail || 'Invalid or expired OTP code.';
+        errorAlert.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<span>Verify & Activate Account</span> <i class="fas fa-arrow-right text-[11px]"></i>';
+      }
+    } catch (err) {
+      console.error(err);
+      form.submit(); // Fallback to standard form submit
+    }
+  }
+
+  async function handleResendCode() {
+    const emailInput = document.getElementById('hidden-email') || document.getElementById('email-input');
+    const email = emailInput ? emailInput.value.trim() : '';
+    const resendBtn = document.getElementById('resend-btn');
+    const resendText = document.getElementById('resend-text');
+    const resendIcon = document.getElementById('resend-icon');
+    const successAlert = document.getElementById('otp-success-alert');
+    const successText = document.getElementById('otp-success-text');
+    const errorAlert = document.getElementById('otp-error-alert');
+    const errorText = document.getElementById('otp-error-text');
+
+    if (!email) {
+      errorText.innerText = 'Email address is missing.';
+      errorAlert.classList.remove('hidden');
+      return;
+    }
+
+    resendBtn.disabled = true;
+    resendIcon.classList.add('fa-spin');
+    resendText.innerText = 'Sending...';
+    errorAlert.classList.add('hidden');
+
+    try {
+      const response = await fetch("{% url 'resend_otp_web' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': window.getCsrfToken ? window.getCsrfToken() : '{{ csrf_token }}',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ email: email })
+      });
+
+      const data = await response.json();
+      if (response.ok && data.status === 'success') {
+        successText.innerText = data.detail || 'New OTP sent to your email!';
+        successAlert.classList.remove('hidden');
+        // Disable resend for 30s
+        let countdown = 30;
+        resendIcon.classList.remove('fa-spin');
+        const interval = setInterval(() => {
+          resendText.innerText = `Resend in ${countdown}s`;
+          countdown--;
+          if (countdown < 0) {
+            clearInterval(interval);
+            resendBtn.disabled = false;
+            resendText.innerText = 'Resend Code';
+          }
+        }, 1000);
+      } else {
+        errorText.innerText = data.detail || 'Failed to resend OTP.';
+        errorAlert.classList.remove('hidden');
+        resendBtn.disabled = false;
+        resendIcon.classList.remove('fa-spin');
+        resendText.innerText = 'Resend Code';
+      }
+    } catch (err) {
+      console.error(err);
+      resendBtn.disabled = false;
+      resendIcon.classList.remove('fa-spin');
+      resendText.innerText = 'Resend Code';
+    }
+  }
+</script>
+{% endblock %}

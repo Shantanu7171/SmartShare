@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sign In - SmartShare{% endblock %}
+
+{% block content %}
+<div class="relative min-h-[calc(100vh-9rem)] flex items-center justify-center px-4 py-12 overflow-hidden">
+  
+  <!-- Ambient Organic Blur Blobs specifically matching reference image -->
+  <div class="absolute -top-16 -left-16 w-80 h-80 rounded-full bg-ochre-300/40 filter blur-[70px] pointer-events-none organic-blob-morph"></div>
+  <div class="absolute top-12 -right-16 w-72 h-72 rounded-full bg-sage-300/45 filter blur-[60px] pointer-events-none organic-blob-morph-delayed"></div>
+  <div class="absolute -bottom-16 -right-16 w-96 h-96 rounded-full bg-terracotta-300/35 filter blur-[80px] pointer-events-none organic-blob-morph"></div>
+
+  <!-- Pebble Login Card Container -->
+  <div class="relative max-w-md w-full bg-[#FFFDF9] border border-cream-300 rounded-[2.25rem] p-8 sm:p-10 shadow-pebble text-left transition-all duration-300">
+    
+    <!-- Top Decorative Botanical Pill Bar (Matching Reference Mockup) -->
+    <div class="w-10 h-1.5 rounded-full bg-botanical-600 mb-4"></div>
+
+    <!-- Header -->
+    <div class="space-y-1 mb-6">
+      <h1 class="text-2xl sm:text-3xl font-serif font-black text-charcoal-900 tracking-tight">
+        Welcome back
+      </h1>
+      <p class="text-xs text-charcoal-600 font-medium">
+        Sign in to your account
+      </p>
+    </div>
+
+    <!-- Login Form -->
+    <form method="POST" action="{% url 'login' %}" class="space-y-4" id="login-form" onsubmit="handleLoginSubmit(event)">
+      {% csrf_token %}
+
+      <!-- Error message container for dynamic alerts -->
+      <div id="login-error-alert" class="hidden p-3.5 rounded-2xl bg-terracotta-50 border border-terracotta-200 text-xs font-bold text-terracotta-700 flex items-center gap-2.5">
+        <i class="fas fa-exclamation-circle text-terracotta-500 flex-shrink-0"></i>
+        <span id="login-error-text"></span>
+      </div>
+
+      <!-- Username or Email -->
+      <div class="space-y-1.5">
+        <label for="login-identifier" class="text-xs font-bold text-charcoal-700 block">
+          Email or Username
+        </label>
+        <div class="relative">
+          <input 
+            type="text" 
+            name="email" 
+            id="login-identifier" 
+            required 
+            autocomplete="username"
+            placeholder="you@example.com" 
+            class="pebble-input w-full px-4 py-3 text-xs focus:bg-white"
+          >
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between">
+          <label for="login-password" class="text-xs font-bold text-charcoal-700 block">
+            Password
+          </label>
+          <a href="{% url 'forgot_password_web' %}" class="text-[11px] font-bold text-botanical-700 hover:text-botanical-800 hover:underline">
+            Forgot password?
+          </a>
+        </div>
+        <div class="relative">
+          <input 
+            type="password" 
+            name="password" 
+            id="login-password" 
+            required 
+            autocomplete="current-password"
+            placeholder="••••••••" 
+            class="pebble-input w-full px-4 py-3 pr-10 text-xs focus:bg-white"
+          >
+          <button 
+            type="button" 
+            onclick="togglePasswordVisibility('login-password', 'toggle-pass-icon')" 
+            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-charcoal-400 hover:text-charcoal-700 cursor-pointer focus:outline-none"
+            tabindex="-1"
+          >
+            <i class="fas fa-eye text-xs" id="toggle-pass-icon"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Submit Button: Chunky Botanical Green Pill -->
+      <button 
+        type="submit" 
+        id="login-submit-btn"
+        class="btn-botanical w-full py-3.5 mt-2 rounded-full text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md"
+      >
+        <span>Continue</span>
+        <i class="fas fa-arrow-right text-[11px]"></i>
+      </button>
+
+      <!-- Signup Redirect -->
+      <div class="text-center pt-3 border-t border-cream-200">
+        <p class="text-xs text-charcoal-600">
+          New to SmartShare? 
+          <a href="{% url 'signup' %}" class="font-bold text-botanical-700 hover:text-botanical-800 hover:underline">
+            Create an account
+          </a>
+        </p>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+  function togglePasswordVisibility(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    if (!input || !icon) return;
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.classList.remove('fa-eye');
+      icon.classList.add('fa-eye-slash');
+    } else {
+      input.type = 'password';
+      icon.classList.remove('fa-eye-slash');
+      icon.classList.add('fa-eye');
+    }
+  }
+
+  async function handleLoginSubmit(e) {
+    e.preventDefault();
+    const form = document.getElementById('login-form');
+    const submitBtn = document.getElementById('login-submit-btn');
+    const errorAlert = document.getElementById('login-error-alert');
+    const errorText = document.getElementById('login-error-text');
+
+    errorAlert.classList.add('hidden');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> <span>Verifying...</span>';
+
+    const formData = new FormData(form);
+    const identifier = formData.get('email');
+    const password = formData.get('password');
+
+    try {
+      const response = await fetch("{% url 'login' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': window.getCsrfToken(),
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+          email: identifier,
+          username: identifier,
+          password: password
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.status === 'success') {
+        window.setAuthSession(data);
+        window.showToast(data.detail || 'Welcome back!', 'success');
+        setTimeout(() => {
+          window.location.href = data.redirect_url || "{% url 'feed' %}";
+        }, 300);
+      } else if (data.status === 'unverified') {
+        if (window.showToast) window.showToast(data.detail || 'Email not verified. Redirecting...', 'warning');
+        errorText.innerText = data.detail || 'Your email is not verified yet. Redirecting to verification...';
+        errorAlert.classList.remove('hidden');
+        setTimeout(() => {
+          window.location.href = data.redirect_url || "{% url 'verify_otp_web' %}";
+        }, 1200);
+      } else {
+        errorText.innerText = data.detail || 'Invalid username/email or password.';
+        errorAlert.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<span>Continue</span> <i class="fas fa-arrow-right text-[11px]"></i>';
+      }
+    } catch (err) {
+      console.error(err);
+      form.submit(); // Standard form fallback
+    }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Courseware Vault & Notes Feed - SmartShare{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  
+  <!-- Feed Header -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-cream-200">
+    <div class="text-left">
+      <h1 class="text-3xl font-serif font-black text-charcoal-900 tracking-tight">Academic Knowledge Feed</h1>
+      <p class="text-xs sm:text-sm text-charcoal-600 mt-1 font-medium">Discover, download, and review peer-curated semester materials.</p>
+    </div>
+
+    <!-- View Mode & Sort Controls -->
+    <div class="flex items-center gap-3 self-end md:self-auto">
+      <form id="sort-form" method="GET" class="flex items-center gap-2">
+        <input type="hidden" name="search" value="{{ search_query }}">
+        <input type="hidden" name="branch" value="{{ selected_branch }}">
+        <input type="hidden" name="semester" value="{{ selected_semester }}">
+        <input type="hidden" name="file_type" value="{{ selected_file_type }}">
+
+        <label for="ordering-select" class="text-xs font-bold text-charcoal-500 hidden sm:inline">Sort by:</label>
+        <select 
+          id="ordering-select"
+          name="ordering" 
+          onchange="document.getElementById('sort-form').submit()"
+          class="pebble-input px-4 py-2 text-xs text-charcoal-800 focus:bg-white cursor-pointer"
+        >
+          <option value="-created_at" {% if ordering == '-created_at' %}selected{% endif %}>Newest First</option>
+          <option value="created_at" {% if ordering == 'created_at' %}selected{% endif %}>Oldest First</option>
+          <option value="-downloads" {% if ordering == '-downloads' %}selected{% endif %}>Most Downloaded</option>
+          <option value="-avg_rating" {% if ordering == '-avg_rating' %}selected{% endif %}>Highest Rated</option>
+        </select>
+      </form>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 pt-8">
+    
+    <!-- Left Column: Search & Filters Sidebar -->
+    <aside class="lg:col-span-1 space-y-6 text-left">
+      
+      <!-- Search Input Box -->
+      <div class="pebble-card p-6 shadow-pebble">
+        <label class="text-[10px] font-extrabold uppercase tracking-widest text-charcoal-500 block mb-2">Search Vault</label>
+        <form method="GET" action="{% url 'feed' %}" class="relative">
+          <input type="hidden" name="branch" value="{{ selected_branch }}">
+          <input type="hidden" name="semester" value="{{ selected_semester }}">
+          <input type="hidden" name="file_type" value="{{ selected_file_type }}">
+          <input type="hidden" name="ordering" value="{{ ordering }}">
+          <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-sage-400 text-xs"></i>
+          <input 
+            type="text" 
+            name="search" 
+            value="{{ search_query }}" 
+            placeholder="Subject, topic, keyword..." 
+            class="pebble-input w-full pl-9 pr-3 py-2 text-xs focus:bg-white"
+          >
+        </form>
+      </div>
+
+      <!-- Filters Card -->
+      <form method="GET" action="{% url 'feed' %}" class="pebble-card p-6 shadow-pebble space-y-5">
+        <input type="hidden" name="search" value="{{ search_query }}">
+        <input type="hidden" name="ordering" value="{{ ordering }}">
+
+        <div class="flex items-center justify-between border-b border-cream-200 pb-3">
+          <span class="text-xs font-serif font-black uppercase tracking-wider text-charcoal-900 flex items-center gap-2">
+            <i class="fas fa-filter text-botanical-600"></i> Filters
+          </span>
+          <a href="{% url 'feed' %}" class="text-[11px] font-bold text-botanical-700 hover:underline">Reset</a>
+        </div>
+
+        <!-- Branch / Department Radios -->
+        <div class="space-y-2.5">
+          <label class="text-[10px] font-extrabold uppercase tracking-widest text-charcoal-500 block">Department</label>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-charcoal-700 hover:text-botanical-800">
+              <input type="radio" name="branch" value="" {% if not selected_branch %}checked{% endif %} onchange="this.form.submit()" class="text-botanical-600 focus:ring-0">
+              <span>All Departments</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-charcoal-700 hover:text-botanical-800">
+              <input type="radio" name="branch" value="CSE" {% if selected_branch == 'CSE' %}checked{% endif %} onchange="this.form.submit()" class="text-botanical-600 focus:ring-0">
+              <span>Computer Science (CSE)</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-charcoal-700 hover:text-botanical-800">
+              <input type="radio" name="branch" value="IT" {% if selected_branch == 'IT' %}checked{% endif %} onchange="this.form.submit()" class="text-botanical-600 focus:ring-0">
+              <span>Information Technology (IT)</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-charcoal-700 hover:text-botanical-800">
+              <input type="radio" name="branch" value="ECE" {% if selected_branch == 'ECE' %}checked{% endif %} onchange="this.form.submit()" class="text-botanical-600 focus:ring-0">
+              <span>Electronics (ECE)</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-charcoal-700 hover:text-botanical-800">
+              <input type="radio" name="branch" value="MECH" {% if selected_branch == 'MECH' %}checked{% endif %} onchange="this.form.submit()" class="text-botanical-600 focus:ring-0">
+              <span>Mechanical Eng.</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-charcoal-700 hover:text-botanical-800">
+              <input type="radio" name="branch" value="CIVIL" {% if selected_branch == 'CIVIL' %}checked{% endif %} onchange="this.form.submit()" class="text-botanical-600 focus:ring-0">
+              <span>Civil Engineering</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Semester Filter -->
+        <div class="space-y-2.5 border-t border-cream-200 pt-4">
+          <label class="text-[10px] font-extrabold uppercase tracking-widest text-charcoal-500 block">Semester</label>
+          <div class="grid grid-cols-4 gap-1.5">
+            <button 
+              type="submit" 
+              name="semester" 
+              value="" 
+              class="py-1.5 text-xs font-bold rounded-xl transition-all {% if not selected_semester %}bg-botanical-600 text-white shadow-sm{% else %}bg-cream-200 text-charcoal-700 hover:bg-cream-300{% endif %}"
+            >
+              All
+            </button>
+            {% for sem in semesters_list %}
+            <button 
+              type="submit" 
+              name="semester" 
+              value="{{ sem }}" 
+              class="py-1.5 text-xs font-bold rounded-xl transition-all {% if selected_semester == sem|stringformat:'s' %}bg-botanical-600 text-white shadow-sm{% else %}bg-cream-200 text-charcoal-700 hover:bg-cream-300{% endif %}"
+            >
+              S{{ sem }}
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- File Type Filter -->
+        <div class="space-y-2.5 border-t border-cream-200 pt-4">
+          <label class="text-[10px] font-extrabold uppercase tracking-widest text-charcoal-500 block">Material Format</label>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-charcoal-700 hover:text-botanical-800">
+              <input type="radio" name="file_type" value="" {% if not selected_file_type %}checked{% endif %} onchange="this.form.submit()" class="text-botanical-600 focus:ring-0">
+              <span>All Formats</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-charcoal-700 hover:text-botanical-800">
+              <input type="radio" name="file_type" value="pdf" {% if selected_file_type == 'pdf' %}checked{% endif %} onchange="this.form.submit()" class="text-botanical-600 focus:ring-0">
+              <span>PDF Documents</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-charcoal-700 hover:text-botanical-800">
+              <input type="radio" name="file_type" value="ppt" {% if selected_file_type == 'ppt' %}checked{% endif %} onchange="this.form.submit()" class="text-botanical-600 focus:ring-0">
+              <span>PowerPoint / Slides</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-charcoal-700 hover:text-botanical-800">
+              <input type="radio" name="file_type" value="image" {% if selected_file_type == 'image' %}checked{% endif %} onchange="this.form.submit()" class="text-botanical-600 focus:ring-0">
+              <span>Diagrams / Handwritten</span>
+            </label>
+          </div>
+        </div>
+
+      </form>
+    </aside>
+
+    <!-- Right Column: Resource Grid & Results -->
+    <main class="lg:col-span-3 space-y-6">
+      
+      <!-- Filter Tags Summary -->
+      {% if search_query or selected_branch or selected_semester or selected_file_type %}
+      <div class="flex flex-wrap items-center gap-2 p-3.5 pebble-card text-xs">
+        <span class="font-bold text-charcoal-500">Active filters:</span>
+        {% if search_query %}
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-botanical-50 text-botanical-800 font-bold border border-botanical-200">
+            "{{ search_query }}"
+          </span>
+        {% endif %}
+        {% if selected_branch %}
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sage-50 text-sage-800 font-bold border border-sage-200">
+            {{ selected_branch }}
+          </span>
+        {% endif %}
+        {% if selected_semester %}
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ochre-50 text-ochre-800 font-bold border border-ochre-200">
+            Sem {{ selected_semester }}
+          </span>
+        {% endif %}
+        {% if selected_file_type %}
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-terracotta-50 text-terracotta-800 font-bold border border-terracotta-200 uppercase">
+            {{ selected_file_type }}
+          </span>
+        {% endif %}
+        <a href="{% url 'feed' %}" class="text-[11px] font-bold text-terracotta-600 hover:underline ml-auto">Clear all</a>
+      </div>
+      {% endif %}
+
+      <!-- Resources Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+        {% for res in resources_page %}
+          {% include 'components/resource_card.html' with res=res %}
+        {% empty %}
+          <div class="col-span-3 text-center py-20 pebble-card p-8">
+            <div class="h-16 w-16 mx-auto rounded-full bg-sage-100 text-sage-600 flex items-center justify-center text-2xl mb-4">
+              <i class="fas fa-leaf"></i>
+            </div>
+            <h3 class="text-base font-serif font-bold text-charcoal-900">No matching study resources</h3>
+            <p class="text-xs text-charcoal-500 mt-1 max-w-sm mx-auto">Try clearing your search terms or be the first scholar to upload notes for this subject.</p>
+            <a href="{% url 'upload' %}" class="btn-botanical inline-block mt-4 px-6 py-2.5 text-xs font-bold rounded-full">
+              Upload Study Notes
+            </a>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Pagination -->
+      {% if resources_page.has_other_pages %}
+      <div class="flex justify-center items-center gap-2 pt-8">
+        {% if resources_page.has_previous %}
+          <a href="?page={{ resources_page.previous_page_number }}&search={{ search_query }}&branch={{ selected_branch }}&semester={{ selected_semester }}&file_type={{ selected_file_type }}&ordering={{ ordering }}" class="h-10 px-4 rounded-full bg-[#FFFDF9] border border-cream-300 text-xs font-bold text-charcoal-700 hover:bg-cream-200 flex items-center gap-1.5 shadow-sm">
+            <i class="fas fa-chevron-left text-[10px]"></i>
+            <span>Prev</span>
+          </a>
+        {% endif %}
+
+        <span class="text-xs font-bold text-charcoal-600 px-3">
+          Page {{ resources_page.number }} of {{ resources_page.paginator.num_pages }}
+        </span>
+
+        {% if resources_page.has_next %}
+          <a href="?page={{ resources_page.next_page_number }}&search={{ search_query }}&branch={{ selected_branch }}&semester={{ selected_semester }}&file_type={{ selected_file_type }}&ordering={{ ordering }}" class="h-10 px-4 rounded-full bg-[#FFFDF9] border border-cream-300 text-xs font-bold text-charcoal-700 hover:bg-cream-200 flex items-center gap-1.5 shadow-sm">
+            <span>Next</span>
+            <i class="fas fa-chevron-right text-[10px]"></i>
+          </a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+    </main>
+  </div>
+</div>
+{% endblock %}

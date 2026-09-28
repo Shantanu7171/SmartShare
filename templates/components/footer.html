@@ -1,0 +1,30 @@
+<footer class="mt-12 px-3 sm:px-6 pb-6 relative z-10">
+  <div class="max-w-7xl mx-auto bg-[#FFFDF9]/95 border border-cream-300 rounded-[2.25rem] p-6 sm:p-8 shadow-pebble flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+    
+    <!-- Brand Info -->
+    <div class="flex items-center gap-3">
+      <div class="h-9 w-9 rounded-2xl bg-botanical-600 text-white flex items-center justify-center text-sm shadow-sm">
+        <i class="fas fa-leaf"></i>
+      </div>
+      <div>
+        <span class="text-sm font-serif font-black tracking-tight text-charcoal-900 leading-tight block">SmartShare</span>
+        <span class="text-[11px] text-sage-600 font-semibold">Organic Academic Knowledge Vault</span>
+      </div>
+    </div>
+    
+    <!-- Organic Navigation Links -->
+    <div class="flex flex-wrap items-center justify-center gap-2 text-xs font-bold text-charcoal-700">
+      <a href="{% url 'feed' %}" class="px-3.5 py-1.5 rounded-full hover:bg-cream-200 hover:text-botanical-700 transition-colors">Vault</a>
+      <a href="{% url 'upload' %}" class="px-3.5 py-1.5 rounded-full hover:bg-cream-200 hover:text-botanical-700 transition-colors">Upload</a>
+      <a href="{% url 'leaderboard' %}" class="px-3.5 py-1.5 rounded-full hover:bg-cream-200 hover:text-botanical-700 transition-colors">Rankings</a>
+      <a href="{% url 'chat' %}" class="px-3.5 py-1.5 rounded-full hover:bg-cream-200 hover:text-botanical-700 transition-colors">SmartBot</a>
+      <a href="{% url 'ai_quiz' %}" class="px-3.5 py-1.5 rounded-full hover:bg-cream-200 hover:text-botanical-700 transition-colors">AI Quiz</a>
+    </div>
+
+    <!-- Copyright -->
+    <div class="text-[11px] text-charcoal-500 font-medium">
+      &copy; 2026 SmartShare. Crafted with Organic Design.
+    </div>
+
+  </div>
+</footer>

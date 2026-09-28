@@ -1,0 +1,546 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI Quiz Generator & Examination - SmartShare{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-left">
+
+  <!-- Main Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EBE4D5] pb-6">
+    <div>
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider bg-[#346845]/10 text-[#346845] border border-[#346845]/20 uppercase">
+        <i class="fas fa-brain"></i> AI Study Assistant
+      </span>
+      <h1 class="font-serif text-2xl sm:text-3xl font-black text-[#232822] mt-1">Interactive AI Quizzes</h1>
+      <p class="text-xs text-[#5C645A]">Generate intelligent multiple-choice exams directly from uploaded notes or course topics.</p>
+    </div>
+
+    <!-- View Switcher -->
+    <div class="flex items-center gap-2">
+      <button 
+        onclick="switchQuizView('dashboard')" 
+        id="btn-nav-dashboard"
+        class="px-4 py-2 text-xs font-bold rounded-full bg-[#346845]/10 text-[#346845] transition-colors"
+      >
+        Quiz Vault
+      </button>
+      <button 
+        onclick="switchQuizView('generator')" 
+        id="btn-nav-generator"
+        class="btn-botanical px-4 py-2 text-xs font-bold rounded-full shadow-sm active:scale-95 transition-all flex items-center gap-1.5"
+      >
+        <i class="fas fa-plus text-[10px]"></i>
+        <span>New AI Quiz</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- VIEW 1: Quiz History Dashboard -->
+  <div id="quiz-view-dashboard" class="space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% for q in quizzes %}
+      <div class="pebble-card p-6 flex flex-col justify-between hover:shadow-lg transition-all duration-300">
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-[#346845] bg-[#346845]/10 px-2.5 py-0.5 rounded-full">
+              {{ q.questions.count }} Questions
+            </span>
+            <span class="text-[10px] text-[#788275]">{{ q.created_at|date:"M d, Y" }}</span>
+          </div>
+          <h3 class="font-serif text-base font-bold text-[#232822] leading-snug">{{ q.title }}</h3>
+          {% if q.resource %}
+            <p class="text-[11px] text-[#5C645A] truncate">From: {{ q.resource.title }}</p>
+          {% endif %}
+        </div>
+
+        <div class="pt-5 mt-4 border-t border-[#EBE4D5] flex items-center justify-between">
+          <div>
+            {% with latest_attempt=q.attempts.first %}
+              {% if latest_attempt %}
+                <span class="text-xs font-bold text-[#D4A359]">Best: {{ latest_attempt.score }} / {{ latest_attempt.total_questions }}</span>
+              {% else %}
+                <span class="text-xs text-[#788275]">Not attempted yet</span>
+              {% endif %}
+            {% endwith %}
+          </div>
+          <button 
+            onclick="startQuiz({{ q.id }})" 
+            class="btn-botanical px-4 py-2 text-xs font-bold rounded-full transition-colors flex items-center gap-1.5"
+          >
+            <span>Take Quiz</span>
+            <i class="fas fa-play text-[9px]"></i>
+          </button>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-span-2 text-center py-16 pebble-card p-8">
+        <div class="w-16 h-16 rounded-full bg-[#346845]/10 text-[#346845] flex items-center justify-center mx-auto mb-4 text-2xl">
+          <i class="fas fa-brain"></i>
+        </div>
+        <h4 class="font-serif text-base font-bold text-[#232822]">No AI quizzes generated yet</h4>
+        <p class="text-xs text-[#5C645A] mt-1">Generate a quiz from study notes or topic text in seconds!</p>
+        <button onclick="switchQuizView('generator')" class="btn-botanical mt-4 px-6 py-2.5 text-xs font-bold rounded-full">
+          Create First Quiz
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- VIEW 2: AI Quiz Generator Form -->
+  <div id="quiz-view-generator" class="hidden pebble-card p-6 sm:p-10 shadow-lg relative overflow-hidden">
+    
+    <div id="generator-form-wrapper" class="space-y-6">
+      <div class="border-b border-[#EBE4D5] pb-4">
+        <h2 class="font-serif text-lg font-bold text-[#232822]">Configure AI Exam</h2>
+        <p class="text-xs text-[#5C645A]">Choose a source material and question parameters.</p>
+      </div>
+
+      <!-- Source Selection Tabs -->
+      <div class="flex items-center gap-2 bg-[#F3EFE6] p-1.5 rounded-full border border-[#E2DBD0]">
+        <button type="button" onclick="setSourceType('upload')" id="btn-src-upload" class="flex-1 py-2 text-xs font-bold rounded-full bg-[#FFFDF9] text-[#232822] shadow-sm">Upload File</button>
+        <button type="button" onclick="setSourceType('text')" id="btn-src-text" class="flex-1 py-2 text-xs font-bold rounded-full text-[#5C645A] hover:text-[#232822]">Paste Text</button>
+        <button type="button" onclick="setSourceType('resource')" id="btn-src-resource" class="flex-1 py-2 text-xs font-bold rounded-full text-[#5C645A] hover:text-[#232822]">Vault Note</button>
+      </div>
+
+      <form id="ai-generate-form" onsubmit="handleGenerateQuiz(event)" class="space-y-6">
+        {% csrf_token %}
+        <!-- Input 1: File Upload -->
+        <div id="src-upload-field" class="space-y-2">
+          <label class="text-xs font-bold text-[#232822] block">Select PDF, Document, or Image</label>
+          <input type="file" id="quiz-file-input" accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.webp" class="pebble-input w-full text-xs text-[#5C645A] p-2.5 file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#346845] file:text-white cursor-pointer">
+        </div>
+
+        <!-- Input 2: Paste Raw Text -->
+        <div id="src-text-field" class="hidden space-y-2">
+          <label class="text-xs font-bold text-[#232822] block">Paste Study Notes / Syllabus Text</label>
+          <textarea id="quiz-text-input" rows="5" placeholder="Paste chapters, summaries, or lecture transcript here..." class="pebble-input w-full p-3.5 text-xs text-[#232822] outline-none"></textarea>
+        </div>
+
+        <!-- Input 3: Pick from Existing Vault Resource -->
+        <div id="src-resource-field" class="hidden space-y-2">
+          <label class="text-xs font-bold text-[#232822] block">Select from Vault Resources</label>
+          <select id="quiz-resource-select" class="pebble-input w-full p-3 text-xs text-[#232822] outline-none cursor-pointer">
+            <option value="">Select a resource</option>
+            {% for r in available_resources %}
+              <option value="{{ r.id }}">{{ r.title }} ({{ r.branch }} Sem {{ r.semester }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Parameters: Count & Difficulty -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-[#232822] block">Questions Count</label>
+            <select id="quiz-num-questions" class="pebble-input w-full p-2.5 text-xs text-[#232822] outline-none cursor-pointer">
+              <option value="3">3 Questions (Speed test)</option>
+              <option value="5" selected>5 Questions (Standard)</option>
+              <option value="10">10 Questions (Comprehensive)</option>
+            </select>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-[#232822] block">Difficulty</label>
+            <select id="quiz-difficulty" class="pebble-input w-full p-2.5 text-xs text-[#232822] outline-none cursor-pointer">
+              <option value="Easy">Easy (Conceptual)</option>
+              <option value="Medium" selected>Medium (Application)</option>
+              <option value="Hard">Hard (Analytical)</option>
+            </select>
+          </div>
+        </div>
+
+        <button 
+          type="submit" 
+          id="btn-generate-submit"
+          class="btn-botanical w-full py-3.5 text-xs font-bold rounded-full shadow-md active:scale-98 transition-all flex items-center justify-center gap-2"
+        >
+          <i class="fas fa-magic"></i>
+          <span>Generate Quiz with AI</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- Generating Progress Loader -->
+    <div id="generator-progress" class="hidden py-16 text-center space-y-6">
+      <div class="relative w-20 h-20 mx-auto">
+        <div class="animate-spin rounded-full h-20 w-20 border-4 border-[#346845] border-t-transparent"></div>
+        <div class="absolute inset-0 flex items-center justify-center text-[#346845]">
+          <i class="fas fa-brain text-2xl animate-pulse"></i>
+        </div>
+      </div>
+      <div class="space-y-2">
+        <h3 id="loader-status-text" class="font-serif text-base font-bold text-[#232822]">Synthesizing with Gemini AI...</h3>
+        <p class="text-xs text-[#5C645A]">Creating organic multiple choice challenges and detailed explanations.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 3: Interactive Quiz Play -->
+  <div id="quiz-view-playing" class="hidden pebble-card p-6 sm:p-10 shadow-lg space-y-8">
+    <div class="flex items-center justify-between border-b border-[#EBE4D5] pb-4">
+      <div>
+        <h2 id="active-quiz-title" class="font-serif text-base font-bold text-[#232822]">Active Quiz</h2>
+        <span id="active-quiz-progress-text" class="text-xs text-[#346845] font-bold">Question 1 of 5</span>
+      </div>
+      <button onclick="abortQuiz()" class="text-xs text-[#E28B74] font-bold hover:underline">Exit Quiz</button>
+    </div>
+
+    <!-- Question Text -->
+    <div class="p-6 bg-[#F3EFE6] rounded-2xl border border-[#E2DBD0]">
+      <p id="active-question-text" class="font-serif text-sm sm:text-base font-bold text-[#232822] leading-relaxed">
+        What is the primary function of an Operating System kernel?
+      </p>
+    </div>
+
+    <!-- MCQ Options (A, B, C, D) -->
+    <div id="active-options-container" class="space-y-3">
+      <!-- Options injected via JS -->
+    </div>
+
+    <!-- Navigator Buttons -->
+    <div class="flex items-center justify-between pt-4 border-t border-[#EBE4D5]">
+      <button 
+        id="btn-prev-question" 
+        onclick="prevQuestion()" 
+        class="px-5 py-2.5 bg-[#F3EFE6] text-[#5C645A] rounded-full text-xs font-bold hover:bg-[#EAE3D5] transition-colors"
+      >
+        Previous
+      </button>
+
+      <button 
+        id="btn-next-question" 
+        onclick="nextQuestion()" 
+        class="btn-botanical px-6 py-2.5 rounded-full text-xs font-bold shadow-md transition-colors"
+      >
+        Next Question →
+      </button>
+
+      <button 
+        id="btn-submit-quiz" 
+        onclick="submitQuizAnswers()" 
+        class="hidden px-6 py-2.5 bg-[#346845] hover:bg-[#2A5437] text-white rounded-full text-xs font-bold shadow-md transition-colors"
+      >
+        Submit Exam
+      </button>
+    </div>
+  </div>
+
+  <!-- VIEW 4: Results & Explanations -->
+  <div id="quiz-view-results" class="hidden pebble-card p-6 sm:p-10 shadow-lg space-y-8">
+    <div class="text-center space-y-4 py-6 border-b border-[#EBE4D5]">
+      <div class="h-20 w-20 rounded-full bg-[#D4A359]/20 text-[#B37824] flex items-center justify-center mx-auto text-3xl shadow-inner">
+        <i class="fas fa-trophy"></i>
+      </div>
+      <div>
+        <h2 class="font-serif text-2xl font-bold text-[#232822]">Exam Completed!</h2>
+        <p id="results-score-label" class="text-lg font-black text-[#346845] mt-1">Score: 4 / 5 (80%)</p>
+      </div>
+      <button onclick="switchQuizView('dashboard')" class="btn-botanical-secondary px-6 py-2.5 text-xs font-bold rounded-full">
+        Back to Quiz Vault
+      </button>
+    </div>
+
+    <div class="space-y-4 text-left">
+      <h3 class="text-xs font-bold uppercase tracking-wider text-[#788275]">Answer Key & Explanations</h3>
+      <div id="results-questions-list" class="space-y-4">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let currentActiveQuiz = null;
+  let currentQuestionIdx = 0;
+  let userAnswers = {}; // {questionId: 'A'|'B'|'C'|'D'}
+  let activeSourceType = 'upload';
+
+  function switchQuizView(view) {
+    document.getElementById('quiz-view-dashboard').classList.toggle('hidden', view !== 'dashboard');
+    document.getElementById('quiz-view-generator').classList.toggle('hidden', view !== 'generator');
+    document.getElementById('quiz-view-playing').classList.toggle('hidden', view !== 'playing');
+    document.getElementById('quiz-view-results').classList.toggle('hidden', view !== 'results');
+
+    const btnDash = document.getElementById('btn-nav-dashboard');
+    if (view === 'dashboard') {
+      btnDash.className = "px-4 py-2 text-xs font-bold rounded-full bg-[#346845]/10 text-[#346845] transition-colors";
+    } else {
+      btnDash.className = "px-4 py-2 text-xs font-bold rounded-full text-[#5C645A] hover:text-[#232822] transition-colors";
+    }
+  }
+
+  function setSourceType(type) {
+    activeSourceType = type;
+    document.getElementById('src-upload-field').classList.toggle('hidden', type !== 'upload');
+    document.getElementById('src-text-field').classList.toggle('hidden', type !== 'text');
+    document.getElementById('src-resource-field').classList.toggle('hidden', type !== 'resource');
+
+    ['upload', 'text', 'resource'].forEach(t => {
+      const btn = document.getElementById(`btn-src-${t}`);
+      if (t === type) {
+        btn.className = "flex-1 py-2 text-xs font-bold rounded-full bg-[#FFFDF9] text-[#232822] shadow-sm";
+      } else {
+        btn.className = "flex-1 py-2 text-xs font-bold rounded-full text-[#5C645A] hover:text-[#232822]";
+      }
+    });
+  }
+
+  async function handleGenerateQuiz(e) {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('num_questions', document.getElementById('quiz-num-questions').value);
+    formData.append('difficulty', document.getElementById('quiz-difficulty').value);
+
+    if (activeSourceType === 'upload') {
+      const file = document.getElementById('quiz-file-input').files[0];
+      if (!file) {
+        window.showToast('Please select a file to generate quiz', 'error');
+        return;
+      }
+      formData.append('file', file);
+    } else if (activeSourceType === 'text') {
+      const text = document.getElementById('quiz-text-input').value.trim();
+      if (!text) {
+        window.showToast('Please enter text content', 'error');
+        return;
+      }
+      if (text.length < 30) {
+        window.showToast('Study notes must be at least 30 characters long', 'error');
+        return;
+      }
+      formData.append('text_content', text);
+    } else {
+      const resId = document.getElementById('quiz-resource-select').value;
+      if (!resId) {
+        window.showToast('Please choose a vault resource', 'error');
+        return;
+      }
+      formData.append('resource_id', resId);
+    }
+
+    // Show Progress Screen
+    document.getElementById('generator-form-wrapper').classList.add('hidden');
+    document.getElementById('generator-progress').classList.remove('hidden');
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      const headers = { 'X-CSRFToken': window.getCsrfToken() };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      let res = await fetch('/api/ai/quizzes/generate/', {
+        method: 'POST',
+        headers: headers,
+        body: formData
+      });
+
+      // If token expired (401), clear stale token and retry with session credentials
+      if (res.status === 401 && token) {
+        localStorage.removeItem('accessToken');
+        res = await fetch('/api/ai/quizzes/generate/', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': window.getCsrfToken() },
+          body: formData
+        });
+      }
+
+      if (res.ok) {
+        const quizData = await res.json();
+        window.showToast('Quiz generated successfully!', 'success');
+        setTimeout(() => {
+          window.location.reload();
+        }, 900);
+      } else {
+        let errorMsg = 'Failed to generate quiz';
+        try {
+          const err = await res.json();
+          errorMsg = err.error || err.detail || err.message || errorMsg;
+        } catch (_) {}
+        window.showToast(errorMsg, 'error');
+        document.getElementById('generator-form-wrapper').classList.remove('hidden');
+        document.getElementById('generator-progress').classList.add('hidden');
+      }
+    } catch (err) {
+      console.error(err);
+      window.showToast('Failed to connect to AI engine', 'error');
+      document.getElementById('generator-form-wrapper').classList.remove('hidden');
+      document.getElementById('generator-progress').classList.add('hidden');
+    }
+  }
+
+  async function startQuiz(quizId) {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const headers = { 'X-CSRFToken': window.getCsrfToken() };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      let res = await fetch(`/api/ai/quizzes/${quizId}/`, { headers });
+      if (res.status === 401 && token) {
+        localStorage.removeItem('accessToken');
+        res = await fetch(`/api/ai/quizzes/${quizId}/`, {
+          headers: { 'X-CSRFToken': window.getCsrfToken() }
+        });
+      }
+
+      if (!res.ok) {
+        window.showToast('Could not load quiz questions', 'error');
+        return;
+      }
+
+      currentActiveQuiz = await res.json();
+      currentQuestionIdx = 0;
+      userAnswers = {};
+
+      document.getElementById('active-quiz-title').innerText = currentActiveQuiz.title;
+      renderActiveQuestion();
+      switchQuizView('playing');
+    } catch (err) {
+      console.error(err);
+      window.showToast('Error loading quiz', 'error');
+    }
+  }
+
+  function renderActiveQuestion() {
+    if (!currentActiveQuiz || !currentActiveQuiz.questions.length) return;
+    const q = currentActiveQuiz.questions[currentQuestionIdx];
+    const total = currentActiveQuiz.questions.length;
+
+    document.getElementById('active-quiz-progress-text').innerText = `Question ${currentQuestionIdx + 1} of ${total}`;
+    document.getElementById('active-question-text').innerText = q.question_text;
+
+    const optionsContainer = document.getElementById('active-options-container');
+    const selected = userAnswers[q.id];
+
+    optionsContainer.innerHTML = ['A', 'B', 'C', 'D'].map(opt => {
+      const optText = q[`option_${opt.toLowerCase()}`];
+      const isSelected = selected === opt;
+      return `
+        <button 
+          type="button" 
+          onclick="selectAnswer(${q.id}, '${opt}')"
+          class="w-full p-4 rounded-2xl border text-xs font-semibold flex items-center justify-between transition-all duration-200 text-left cursor-pointer ${ isSelected ? 'bg-[#346845] text-white border-[#346845] shadow-sm' : 'bg-[#F3EFE6] border-[#E2DBD0] text-[#232822] hover:border-[#346845]' }"
+        >
+          <div class="flex items-center gap-3">
+            <span class="h-6 w-6 rounded-lg flex items-center justify-center font-bold text-[10px] ${isSelected ? 'bg-white/20 text-white' : 'bg-[#EAE3D5] text-[#5C645A]'}">
+              ${opt}
+            </span>
+            <span>${optText}</span>
+          </div>
+          ${isSelected ? '<i class="fas fa-check-circle text-white text-sm"></i>' : ''}
+        </button>
+      `;
+    }).join('');
+
+    // Update Next vs Submit
+    document.getElementById('btn-prev-question').classList.toggle('hidden', currentQuestionIdx === 0);
+    const isLast = currentQuestionIdx === total - 1;
+    document.getElementById('btn-next-question').classList.toggle('hidden', isLast);
+    document.getElementById('btn-submit-quiz').classList.toggle('hidden', !isLast);
+  }
+
+  function selectAnswer(questionId, option) {
+    userAnswers[questionId] = option;
+    renderActiveQuestion();
+  }
+
+  function nextQuestion() {
+    if (currentActiveQuiz && currentQuestionIdx < currentActiveQuiz.questions.length - 1) {
+      currentQuestionIdx++;
+      renderActiveQuestion();
+    }
+  }
+
+  function prevQuestion() {
+    if (currentQuestionIdx > 0) {
+      currentQuestionIdx--;
+      renderActiveQuestion();
+    }
+  }
+
+  async function submitQuizAnswers() {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': window.getCsrfToken()
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      let res = await fetch(`/api/ai/quizzes/${currentActiveQuiz.id}/submit/`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ answers: userAnswers })
+      });
+
+      if (res.status === 401 && token) {
+        localStorage.removeItem('accessToken');
+        res = await fetch(`/api/ai/quizzes/${currentActiveQuiz.id}/submit/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': window.getCsrfToken()
+          },
+          body: JSON.stringify({ answers: userAnswers })
+        });
+      }
+
+      if (res.ok) {
+        const result = await res.json();
+        showQuizResults(result);
+      } else {
+        let msg = 'Failed to submit exam';
+        try {
+          const err = await res.json();
+          msg = err.error || err.detail || msg;
+        } catch (_) {}
+        window.showToast(msg, 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      window.showToast('Network error submitting quiz', 'error');
+    }
+  }
+
+  function showQuizResults(result) {
+    const total = result.total_questions || result.total || (currentActiveQuiz ? currentActiveQuiz.questions.length : 1);
+    const score = result.score || 0;
+    const pct = Math.round((score / total) * 100);
+    document.getElementById('results-score-label').innerText = `Score: ${score} / ${total} (${pct}%) — Points Earned: +${result.points_awarded || (score * 2)} XP`;
+
+    const list = document.getElementById('results-questions-list');
+    const items = result.results || currentActiveQuiz.questions || [];
+    list.innerHTML = items.map((q, idx) => {
+      const userAns = q.user_answer || userAnswers[q.id || q.question_id] || 'None';
+      const correctAns = q.correct_answer || 'A';
+      const isCorrect = q.is_correct !== undefined ? q.is_correct : (userAns === correctAns);
+      const questionText = q.question_text || (currentActiveQuiz && currentActiveQuiz.questions[idx] && currentActiveQuiz.questions[idx].question_text) || `Question ${idx + 1}`;
+      const optText = q[`option_${correctAns.toLowerCase()}`] || (currentActiveQuiz && currentActiveQuiz.questions[idx] && currentActiveQuiz.questions[idx][`option_${correctAns.toLowerCase()}`]) || '';
+
+      return `
+        <div class="p-5 rounded-2xl bg-[#F3EFE6] border border-[#E2DBD0] space-y-3">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-[#232822]">Q${idx + 1}. ${questionText}</span>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${isCorrect ? 'bg-[#346845]/20 text-[#244A30]' : 'bg-[#E28B74]/20 text-[#8F3F2A]'}">
+              ${isCorrect ? 'Correct (+2 pts)' : 'Incorrect'}
+            </span>
+          </div>
+          <div class="text-xs space-y-1 text-[#5C645A]">
+            <p>Your Answer: <strong class="${isCorrect ? 'text-[#346845]' : 'text-[#E28B74]'}">${userAns}</strong></p>
+            <p>Correct Answer: <strong class="text-[#346845]">${correctAns}</strong> ${optText ? `(${optText})` : ''}</p>
+            ${q.explanation ? `<p class="text-[11px] text-[#788275] italic pt-1">Explanation: ${q.explanation}</p>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    switchQuizView('results');
+  }
+
+  function abortQuiz() {
+    if (confirm('Are you sure you want to exit? Your answers will not be recorded.')) {
+      switchQuizView('dashboard');
+    }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,497 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ request.user.username }}'s Profile - SmartShare{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+
+  <!-- Profile Pebble Card -->
+  <div class="pebble-card p-6 sm:p-10 shadow-pebble relative overflow-hidden text-left">
+    
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+        <!-- Avatar -->
+        <div class="relative">
+          {% if request.user.avatar %}
+            <img src="{{ request.user.avatar.url }}" alt="{{ request.user.username }}" class="h-24 w-24 rounded-full object-cover border-4 border-botanical-300 shadow-md">
+          {% else %}
+            <div class="h-24 w-24 rounded-full bg-gradient-to-tr from-botanical-600 to-sage-500 text-white flex items-center justify-center font-bold text-3xl uppercase shadow-md">
+              {{ request.user.username|slice:":1" }}
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-botanical-100 text-botanical-800 border border-botanical-200">
+              {{ request.user.role }}
+            </span>
+            <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-ochre-100 text-ochre-800 border border-ochre-200">
+              🏆 {{ request.user.points }} Points
+            </span>
+          </div>
+
+          <h1 class="text-2xl sm:text-3xl font-serif font-black text-charcoal-900 leading-tight">
+            {{ request.user.username }}
+          </h1>
+          <p class="text-xs text-charcoal-500 font-medium">{{ request.user.email }}</p>
+
+          <div class="flex flex-wrap items-center gap-2 text-xs text-charcoal-600 pt-1 font-medium">
+            {% if request.user.branch %}
+              <span class="font-bold text-botanical-800"><i class="fas fa-graduation-cap text-botanical-600"></i> {{ request.user.branch }} (Sem {{ request.user.semester|default:"-" }})</span>
+            {% endif %}
+            {% if request.user.college %}
+              <span>• {{ request.user.college }}</span>
+            {% endif %}
+            {% if request.user.university %}
+              <span>• {{ request.user.university }}</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Action: Edit Profile -->
+      <button 
+        type="button"
+        onclick="toggleEditProfileModal(true)" 
+        class="px-5 py-2.5 bg-cream-200 hover:bg-cream-300 text-charcoal-800 font-bold text-xs rounded-full border border-cream-300 hover:border-botanical-400 transition-all flex items-center gap-2 shadow-sm active:scale-95 cursor-pointer"
+      >
+        <i class="fas fa-user-pen text-botanical-600"></i>
+        <span>Edit Profile</span>
+      </button>
+    </div>
+
+    <!-- Bio -->
+    {% if request.user.bio %}
+    <div class="border-t border-cream-200 mt-6 pt-4">
+      <p class="text-xs text-charcoal-700 leading-relaxed font-medium">{{ request.user.bio }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Admin Stats (Visible if admin) -->
+  {% if request.user.role == 'admin' or request.user.is_superuser %}
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+    <div class="pebble-card p-6 shadow-sm text-left">
+      <span class="text-xs text-charcoal-500 font-bold uppercase tracking-wider block">Pending Approvals</span>
+      <span class="text-3xl font-serif font-black text-ochre-600 mt-1 block">{{ pending_count|default:0 }}</span>
+      <a href="{% url 'admin_panel' %}" class="text-[11px] font-bold text-botanical-700 hover:underline mt-2 inline-block">Review in Admin Panel →</a>
+    </div>
+    <div class="pebble-card p-6 shadow-sm text-left">
+      <span class="text-xs text-charcoal-500 font-bold uppercase tracking-wider block">Total Vault Materials</span>
+      <span class="text-3xl font-serif font-black text-charcoal-900 mt-1 block">{{ total_resources_count|default:0 }}</span>
+    </div>
+    <div class="pebble-card p-6 shadow-sm text-left">
+      <span class="text-xs text-charcoal-500 font-bold uppercase tracking-wider block">Registered Scholars</span>
+      <span class="text-3xl font-serif font-black text-botanical-700 mt-1 block">{{ total_users_count|default:0 }}</span>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Tabs: My Uploads vs Saved Bookmarks -->
+  <div class="space-y-6">
+    <div class="flex items-center gap-2 border-b border-cream-200 pb-3">
+      <button 
+        onclick="switchProfileTab('uploads')" 
+        id="tab-btn-uploads"
+        class="px-5 py-2 text-xs font-bold rounded-full bg-botanical-600 text-white shadow-sm transition-all cursor-pointer"
+      >
+        My Uploads ({{ my_uploads.count }})
+      </button>
+      <button 
+        onclick="switchProfileTab('bookmarks')" 
+        id="tab-btn-bookmarks"
+        class="px-5 py-2 text-xs font-bold rounded-full text-charcoal-600 hover:text-charcoal-900 transition-all cursor-pointer"
+      >
+        Saved Bookmarks ({{ my_bookmarks.count }})
+      </button>
+    </div>
+
+    <!-- My Uploads Grid -->
+    <div id="sec-uploads" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for res in my_uploads %}
+        {% include 'components/resource_card.html' with res=res %}
+      {% empty %}
+        <div class="col-span-3 text-center py-16 pebble-card p-8">
+          <i class="fas fa-cloud-upload-alt text-3xl text-sage-400 mb-3 block"></i>
+          <h4 class="text-sm font-serif font-bold text-charcoal-800">No courseware uploaded yet</h4>
+          <p class="text-xs text-charcoal-500 mt-1">Contribute lecture notes or past exams to earn scholar points.</p>
+          <a href="{% url 'upload' %}" class="btn-botanical inline-block mt-4 px-6 py-2.5 text-xs font-bold rounded-full">Upload Now</a>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Bookmarks Grid -->
+    <div id="sec-bookmarks" class="hidden grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for res in my_bookmarks %}
+        {% include 'components/resource_card.html' with res=res %}
+      {% empty %}
+        <div class="col-span-3 text-center py-16 pebble-card p-8">
+          <i class="fas fa-bookmark text-3xl text-sage-400 mb-3 block"></i>
+          <h4 class="text-sm font-serif font-bold text-charcoal-800">No saved bookmarks yet</h4>
+          <p class="text-xs text-charcoal-500 mt-1">Browse the vault and bookmark helpful materials for quick offline access.</p>
+          <a href="{% url 'feed' %}" class="btn-botanical inline-block mt-4 px-6 py-2.5 text-xs font-bold rounded-full">Explore Vault</a>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Edit Profile Modal (Professional Pebble Dialog) -->
+<div 
+  id="edit-profile-modal" 
+  class="hidden fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-charcoal-900/60 backdrop-blur-sm overflow-y-auto"
+  onclick="handleBackdropClick(event)"
+  role="dialog" 
+  aria-modal="true" 
+  aria-labelledby="edit-profile-title"
+>
+  <div 
+    id="edit-profile-dialog"
+    class="relative w-full max-w-lg bg-[#FFFDF9] border border-cream-300/90 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] my-auto text-left modal-animate-enter"
+    onclick="event.stopPropagation()"
+  >
+    
+    <!-- Modal Header (Pinned Top) -->
+    <div class="px-6 py-4 sm:px-7 sm:py-5 border-b border-cream-200/90 bg-[#FFFDF9] flex items-center justify-between sticky top-0 z-20">
+      <div class="flex items-center gap-3.5">
+        <div class="h-10 w-10 sm:h-11 sm:w-11 rounded-2xl bg-gradient-to-tr from-botanical-100 to-sage-100 text-botanical-800 border border-botanical-200 flex items-center justify-center text-base sm:text-lg shadow-sm">
+          <i class="fas fa-user-pen"></i>
+        </div>
+        <div>
+          <h3 id="edit-profile-title" class="text-lg sm:text-xl font-serif font-black text-charcoal-900 leading-tight">
+            Update Profile
+          </h3>
+          <p class="text-[11px] text-charcoal-500 font-medium mt-0.5">
+            Personalize your campus presence and academic details
+          </p>
+        </div>
+      </div>
+      <button 
+        type="button" 
+        onclick="toggleEditProfileModal(false)" 
+        class="h-8 w-8 rounded-full text-charcoal-400 hover:text-charcoal-800 hover:bg-cream-200/80 transition-colors flex items-center justify-center"
+        aria-label="Close modal"
+      >
+        <i class="fas fa-times text-sm"></i>
+      </button>
+    </div>
+
+    <!-- Scrollable Form Body -->
+    <form method="POST" action="{% url 'update_profile' %}" enctype="multipart/form-data" id="edit-profile-form" class="flex flex-col flex-1 overflow-hidden" onsubmit="handleProfileSubmit(event)">
+      {% csrf_token %}
+      
+      <div class="p-5 sm:p-6 space-y-4 overflow-y-auto max-h-[calc(90vh-130px)] custom-modal-scroll">
+        
+        <!-- Avatar Upload Card -->
+        <div class="p-3.5 rounded-2xl bg-cream-50/80 border border-cream-200/90 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+          
+          <!-- Avatar Preview with Camera Badge -->
+          <div class="relative group cursor-pointer shrink-0" onclick="document.getElementById('avatar-input').click()" title="Click to change photo">
+            <div class="h-16 w-16 rounded-full overflow-hidden border-2 border-botanical-300 ring-4 ring-botanical-100/60 shadow-md bg-white flex items-center justify-center">
+              {% if request.user.avatar %}
+                <img id="avatar-preview-img" src="{{ request.user.avatar.url }}" alt="{{ request.user.username }}" class="h-full w-full object-cover">
+                <div id="avatar-preview-placeholder" class="hidden h-full w-full bg-gradient-to-tr from-botanical-600 to-sage-500 text-white flex items-center justify-center font-bold text-xl uppercase">
+                  {{ request.user.username|slice:":1" }}
+                </div>
+              {% else %}
+                <img id="avatar-preview-img" src="" alt="Avatar preview" class="hidden h-full w-full object-cover">
+                <div id="avatar-preview-placeholder" class="h-full w-full bg-gradient-to-tr from-botanical-600 to-sage-500 text-white flex items-center justify-center font-bold text-xl uppercase">
+                  {{ request.user.username|slice:":1" }}
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- Floating Camera Badge -->
+            <div class="absolute bottom-0 right-0 h-5 w-5 rounded-full bg-botanical-600 text-white border-2 border-white flex items-center justify-center text-[9px] shadow-sm group-hover:scale-110 transition-transform">
+              <i class="fas fa-camera"></i>
+            </div>
+          </div>
+
+          <!-- Controls & Helper -->
+          <div class="flex-1 min-w-0 space-y-1">
+            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+              <button 
+                type="button" 
+                onclick="document.getElementById('avatar-input').click()"
+                class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-white hover:bg-cream-100 text-botanical-800 border border-botanical-300 shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+              >
+                <i class="fas fa-cloud-arrow-up text-botanical-600 text-[11px]"></i>
+                <span>Choose Photo</span>
+              </button>
+              <span id="avatar-file-name" class="text-[11px] text-charcoal-500 font-medium truncate max-w-[150px] hidden"></span>
+            </div>
+            <p class="text-[10px] text-charcoal-500 font-medium">
+              Square JPG, PNG, or WebP recommended (Max 5MB).
+            </p>
+            <input 
+              type="file" 
+              name="avatar" 
+              id="avatar-input" 
+              accept="image/*" 
+              class="hidden"
+              onchange="handleAvatarFileSelect(event)"
+            >
+          </div>
+
+        </div>
+
+        <!-- Academic Information Group -->
+        <div class="space-y-3.5">
+          <span class="text-[10px] font-extrabold uppercase tracking-wider text-botanical-800 block pb-1 border-b border-cream-200">
+            <i class="fas fa-graduation-cap text-botanical-600 mr-1"></i> Academic Profile
+          </span>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <!-- Branch -->
+            <div class="space-y-1.5">
+              <label class="block text-xs font-bold text-charcoal-700">
+                Branch / Discipline
+              </label>
+              <div class="relative">
+                <select 
+                  name="branch" 
+                  class="pebble-input w-full px-3.5 py-2.5 text-xs text-charcoal-900 font-medium appearance-none focus:bg-white cursor-pointer pr-9"
+                >
+                  <option value="CSE" {% if request.user.branch == 'CSE' %}selected{% endif %}>CSE (Computer Science)</option>
+                  <option value="IT" {% if request.user.branch == 'IT' %}selected{% endif %}>IT (Information Tech)</option>
+                  <option value="ECE" {% if request.user.branch == 'ECE' %}selected{% endif %}>ECE (Electronics & Comm)</option>
+                  <option value="MECH" {% if request.user.branch == 'MECH' %}selected{% endif %}>MECH (Mechanical)</option>
+                  <option value="CIVIL" {% if request.user.branch == 'CIVIL' %}selected{% endif %}>CIVIL (Civil Engg)</option>
+                </select>
+                <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-charcoal-400 text-xs">
+                  <i class="fas fa-chevron-down"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Semester -->
+            <div class="space-y-1.5">
+              <label class="block text-xs font-bold text-charcoal-700">
+                Semester
+              </label>
+              <div class="relative">
+                <select 
+                  name="semester" 
+                  class="pebble-input w-full px-3.5 py-2.5 text-xs text-charcoal-900 font-medium appearance-none focus:bg-white cursor-pointer pr-9"
+                >
+                  <option value="1" {% if request.user.semester == 1 or not request.user.semester %}selected{% endif %}>Semester 1</option>
+                  <option value="2" {% if request.user.semester == 2 %}selected{% endif %}>Semester 2</option>
+                  <option value="3" {% if request.user.semester == 3 %}selected{% endif %}>Semester 3</option>
+                  <option value="4" {% if request.user.semester == 4 %}selected{% endif %}>Semester 4</option>
+                  <option value="5" {% if request.user.semester == 5 %}selected{% endif %}>Semester 5</option>
+                  <option value="6" {% if request.user.semester == 6 %}selected{% endif %}>Semester 6</option>
+                  <option value="7" {% if request.user.semester == 7 %}selected{% endif %}>Semester 7</option>
+                  <option value="8" {% if request.user.semester == 8 %}selected{% endif %}>Semester 8</option>
+                </select>
+                <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-charcoal-400 text-xs">
+                  <i class="fas fa-chevron-down"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- College -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-charcoal-700">
+              College / Institute
+            </label>
+            <div class="relative">
+              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-charcoal-400 text-xs pointer-events-none">
+                <i class="fas fa-building-columns"></i>
+              </span>
+              <input 
+                type="text" 
+                name="college" 
+                value="{{ request.user.college }}" 
+                placeholder="e.g. Main Campus / School of Engineering" 
+                class="pebble-input w-full pl-9 pr-3.5 py-2.5 text-xs text-charcoal-900 placeholder-charcoal-400 focus:bg-white"
+              >
+            </div>
+          </div>
+
+          <!-- University -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-charcoal-700">
+              University
+            </label>
+            <div class="relative">
+              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-charcoal-400 text-xs pointer-events-none">
+                <i class="fas fa-university"></i>
+              </span>
+              <input 
+                type="text" 
+                name="university" 
+                value="{{ request.user.university }}" 
+                placeholder="e.g. Delhi Technological University / AKTU" 
+                class="pebble-input w-full pl-9 pr-3.5 py-2.5 text-xs text-charcoal-900 placeholder-charcoal-400 focus:bg-white"
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Bio Group -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between pb-1 border-b border-cream-200">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-botanical-800">
+              <i class="fas fa-quote-left text-botanical-600 mr-1"></i> Short Bio
+            </span>
+            <span id="bio-char-count" class="text-[10px] text-charcoal-400 font-bold">0 / 250</span>
+          </div>
+          <div class="relative">
+            <textarea 
+              id="bio-input"
+              name="bio" 
+              rows="3" 
+              maxlength="250"
+              oninput="updateBioLength()"
+              class="pebble-input w-full p-3.5 text-xs text-charcoal-900 placeholder-charcoal-400 focus:bg-white resize-none leading-relaxed" 
+              placeholder="Tell campus peers about your studies, projects, interests..."
+            >{{ request.user.bio }}</textarea>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer (Pinned Bottom) -->
+      <div class="px-6 py-4 sm:px-7 border-t border-cream-200/90 bg-[#FFFDF9] flex items-center justify-between sticky bottom-0 z-20">
+        <span class="text-[11px] text-charcoal-500 font-medium hidden sm:inline">
+          ✨ Live changes on campus feed
+        </span>
+        <div class="flex items-center gap-2.5 ml-auto">
+          <button 
+            type="button" 
+            onclick="toggleEditProfileModal(false)" 
+            class="px-5 py-2 text-xs font-bold text-charcoal-600 hover:text-charcoal-900 hover:bg-cream-200/80 rounded-full border border-cream-300 transition-colors"
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            id="save-profile-btn"
+            class="btn-botanical px-6 py-2.5 text-xs font-bold rounded-full shadow-md hover:shadow-lg flex items-center gap-2"
+          >
+            <i class="fas fa-check text-[11px]"></i>
+            <span>Save Changes</span>
+          </button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function switchProfileTab(tab) {
+    const secUploads = document.getElementById('sec-uploads');
+    const secBookmarks = document.getElementById('sec-bookmarks');
+    const btnUploads = document.getElementById('tab-btn-uploads');
+    const btnBookmarks = document.getElementById('tab-btn-bookmarks');
+
+    if (tab === 'uploads') {
+      secUploads.classList.remove('hidden');
+      secBookmarks.classList.add('hidden');
+      btnUploads.className = "px-5 py-2 text-xs font-bold rounded-full bg-botanical-600 text-white shadow-sm transition-all cursor-pointer";
+      btnBookmarks.className = "px-5 py-2 text-xs font-bold rounded-full text-charcoal-600 hover:text-charcoal-900 transition-all cursor-pointer";
+    } else {
+      secUploads.classList.add('hidden');
+      secBookmarks.classList.remove('hidden');
+      secBookmarks.classList.add('grid');
+      btnBookmarks.className = "px-5 py-2 text-xs font-bold rounded-full bg-botanical-600 text-white shadow-sm transition-all cursor-pointer";
+      btnUploads.className = "px-5 py-2 text-xs font-bold rounded-full text-charcoal-600 hover:text-charcoal-900 transition-all cursor-pointer";
+    }
+  }
+
+  function toggleEditProfileModal(show) {
+    const modal = document.getElementById('edit-profile-modal');
+    if (!modal) return;
+    
+    const isCurrentlyHidden = modal.classList.contains('hidden');
+    const shouldOpen = typeof show === 'boolean' ? show : isCurrentlyHidden;
+
+    if (shouldOpen) {
+      modal.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+      updateBioLength();
+    } else {
+      modal.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+    }
+  }
+
+  function handleBackdropClick(e) {
+    if (e.target.id === 'edit-profile-modal') {
+      toggleEditProfileModal(false);
+    }
+  }
+
+  // Keyboard shortcut: Escape to close modal
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('edit-profile-modal');
+      if (modal && !modal.classList.contains('hidden')) {
+        toggleEditProfileModal(false);
+      }
+    }
+  });
+
+  function handleAvatarFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Selected file exceeds 5MB limit. Please choose a smaller image.');
+      event.target.value = '';
+      return;
+    }
+
+    const nameEl = document.getElementById('avatar-file-name');
+    if (nameEl) {
+      nameEl.textContent = file.name;
+      nameEl.classList.remove('hidden');
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = document.getElementById('avatar-preview-img');
+      const placeholder = document.getElementById('avatar-preview-placeholder');
+      if (img) {
+        img.src = e.target.result;
+        img.classList.remove('hidden');
+      }
+      if (placeholder) {
+        placeholder.classList.add('hidden');
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function updateBioLength() {
+    const bioInput = document.getElementById('bio-input');
+    const countEl = document.getElementById('bio-char-count');
+    if (bioInput && countEl) {
+      countEl.textContent = `${bioInput.value.length} / 250`;
+    }
+  }
+
+  function handleProfileSubmit(event) {
+    const btn = document.getElementById('save-profile-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i> <span>Saving...</span>';
+      btn.classList.add('opacity-80', 'cursor-not-allowed');
+    }
+  }
+
+  // Initialize bio count on load
+  document.addEventListener('DOMContentLoaded', () => {
+    updateBioLength();
+  });
+</script>
+{% endblock %}

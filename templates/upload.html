@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Share & Upload Study Resource - SmartShare{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+  
+  <div class="pebble-card p-6 sm:p-10 shadow-pebble space-y-8 text-left relative overflow-hidden">
+    
+    <!-- Top Decorative Botanical Bar -->
+    <div class="w-10 h-1.5 rounded-full bg-botanical-600"></div>
+
+    <!-- Heading -->
+    <div class="space-y-1 border-b border-cream-200 pb-5">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider bg-botanical-100 text-botanical-800 border border-botanical-200 uppercase">
+        <i class="fas fa-seedling"></i> Knowledge Contribution
+      </span>
+      <h1 class="text-2xl sm:text-3xl font-serif font-black text-charcoal-900 tracking-tight">Share Courseware</h1>
+      <p class="text-xs text-charcoal-600 font-medium">Contribute lecture notes, exam guides, or study diagrams to earn scholar points.</p>
+    </div>
+
+    <!-- Form -->
+    <form method="POST" action="{% url 'upload' %}" enctype="multipart/form-data" class="space-y-6" id="upload-form">
+      {% csrf_token %}
+
+      <!-- Drag & Drop Zone -->
+      <div class="space-y-2">
+        <label class="text-xs font-bold uppercase tracking-wider text-charcoal-500 block">File Attachment *</label>
+        <div 
+          id="dropzone"
+          onclick="document.getElementById('file-input').click()"
+          class="border-2 border-dashed border-sage-300 hover:border-botanical-500 rounded-[1.75rem] p-8 text-center cursor-pointer transition-all bg-cream-200/50 hover:bg-cream-200/80"
+        >
+          <input 
+            type="file" 
+            id="file-input" 
+            name="file" 
+            required 
+            onchange="handleFileSelected(this)" 
+            class="hidden"
+          >
+          <div id="dropzone-prompt" class="space-y-3">
+            <div class="h-12 w-12 rounded-full bg-botanical-100 text-botanical-700 flex items-center justify-center mx-auto text-xl shadow-inner">
+              <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-charcoal-800">Click to upload or drag & drop</p>
+              <p class="text-[10px] text-charcoal-500 mt-1 font-medium">PDF, DOC, PPT, or Image (Max 25MB)</p>
+            </div>
+          </div>
+
+          <div id="file-info" class="hidden flex items-center justify-between p-3.5 bg-botanical-50 rounded-2xl border border-botanical-200">
+            <div class="flex items-center gap-3 text-left truncate">
+              <i class="fas fa-file text-botanical-600 text-lg"></i>
+              <div class="truncate">
+                <p id="file-name" class="text-xs font-bold text-charcoal-900 truncate">file.pdf</p>
+                <p id="file-size" class="text-[10px] text-charcoal-500">0 KB</p>
+              </div>
+            </div>
+            <button type="button" onclick="clearSelectedFile(event)" class="text-terracotta-500 hover:text-terracotta-700 text-xs p-1.5 rounded-full hover:bg-white transition-colors">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resource Title -->
+      <div class="space-y-1.5">
+        <label class="text-xs font-bold text-charcoal-700 block">Resource Title *</label>
+        <input 
+          type="text" 
+          id="title-input"
+          name="title" 
+          required 
+          placeholder="e.g., Operating Systems - Unit 3 Complete Notes"
+          class="pebble-input w-full px-4 py-2.5 text-xs focus:bg-white"
+        >
+      </div>
+
+      <!-- Subject & Format Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-charcoal-700 block">Subject Name *</label>
+          <input 
+            type="text" 
+            name="subject" 
+            required 
+            placeholder="e.g., Computer Networks"
+            class="pebble-input w-full px-4 py-2.5 text-xs focus:bg-white"
+          >
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-charcoal-700 block">File Type *</label>
+          <select 
+            id="file-type-select"
+            name="file_type" 
+            class="pebble-input w-full px-4 py-2.5 text-xs focus:bg-white cursor-pointer"
+          >
+            <option value="pdf">PDF Notes</option>
+            <option value="ppt">PowerPoint Slides</option>
+            <option value="doc">Word Document</option>
+            <option value="image">Diagram / Handwritten Image</option>
+            <option value="other">Other Material</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Department & Semester Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-charcoal-700 block">Department (Branch) *</label>
+          <select 
+            name="branch" 
+            required 
+            class="pebble-input w-full px-4 py-2.5 text-xs focus:bg-white cursor-pointer"
+          >
+            <option value="" disabled selected>Select Branch...</option>
+            <option value="CSE">Computer Science (CSE)</option>
+            <option value="IT">Information Technology (IT)</option>
+            <option value="ECE">Electronics (ECE)</option>
+            <option value="MECH">Mechanical Engineering</option>
+            <option value="CIVIL">Civil Engineering</option>
+          </select>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-charcoal-700 block">Semester *</label>
+          <select 
+            name="semester" 
+            required 
+            class="pebble-input w-full px-4 py-2.5 text-xs focus:bg-white cursor-pointer"
+          >
+            <option value="" disabled selected>Select Semester...</option>
+            <option value="1">Semester 1</option>
+            <option value="2">Semester 2</option>
+            <option value="3">Semester 3</option>
+            <option value="4">Semester 4</option>
+            <option value="5">Semester 5</option>
+            <option value="6">Semester 6</option>
+            <option value="7">Semester 7</option>
+            <option value="8">Semester 8</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="space-y-1.5">
+        <label class="text-xs font-bold text-charcoal-700 block">Description / Chapters Covered</label>
+        <textarea 
+          name="description" 
+          rows="3" 
+          placeholder="Summary of topics, formulas, or syllabus chapters included..."
+          class="pebble-input w-full px-4 py-2.5 text-xs focus:bg-white resize-none"
+        ></textarea>
+      </div>
+
+      <!-- Tags -->
+      <div class="space-y-1.5">
+        <label class="text-xs font-bold text-charcoal-700 block">Tags (Comma or space separated)</label>
+        <input 
+          type="text" 
+          name="tags" 
+          placeholder="e.g., midterm, unit-1, gate-prep, diagrams"
+          class="pebble-input w-full px-4 py-2.5 text-xs focus:bg-white"
+        >
+      </div>
+
+      <!-- Points Notice & Submit -->
+      <div class="pt-4 border-t border-cream-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-2 text-xs text-botanical-700 font-bold">
+          <i class="fas fa-gift"></i>
+          <span>+5 Contributor points awarded instantly</span>
+        </div>
+
+        <button 
+          type="submit" 
+          id="submit-btn"
+          class="btn-botanical w-full sm:w-auto px-8 py-3 text-xs font-bold rounded-full shadow-md flex items-center justify-center gap-2"
+        >
+          <i class="fas fa-check"></i>
+          <span>Publish to Vault</span>
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+  function handleFileSelected(input) {
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      document.getElementById('dropzone-prompt').classList.add('hidden');
+      const info = document.getElementById('file-info');
+      info.classList.remove('hidden');
+      document.getElementById('file-name').innerText = file.name;
+      document.getElementById('file-size').innerText = (file.size / 1024).toFixed(1) + ' KB';
+
+      // Auto-populate title if empty
+      const titleInput = document.getElementById('title-input');
+      if (!titleInput.value) {
+        const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+        titleInput.value = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+      }
+
+      // Auto-detect extension
+      const ext = file.name.split('.').pop().toLowerCase();
+      const select = document.getElementById('file-type-select');
+      if (['pdf'].includes(ext)) select.value = 'pdf';
+      else if (['ppt', 'pptx'].includes(ext)) select.value = 'ppt';
+      else if (['doc', 'docx'].includes(ext)) select.value = 'doc';
+      else if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) select.value = 'image';
+      else select.value = 'other';
+    }
+  }
+
+  function clearSelectedFile(e) {
+    e.stopPropagation();
+    const input = document.getElementById('file-input');
+    input.value = '';
+    document.getElementById('file-info').classList.add('hidden');
+    document.getElementById('dropzone-prompt').classList.remove('hidden');
+  }
+
+  // Drag & Drop event handlers
+  const dropzone = document.getElementById('dropzone');
+  ['dragenter', 'dragover'].forEach(name => {
+    dropzone.addEventListener(name, (e) => {
+      e.preventDefault();
+      dropzone.classList.add('border-botanical-500', 'bg-cream-200');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach(name => {
+    dropzone.addEventListener(name, (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('border-botanical-500', 'bg-cream-200');
+    });
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const input = document.getElementById('file-input');
+      input.files = e.dataTransfer.files;
+      handleFileSelected(input);
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Top Academic Contributors - SmartShare Rankings{% endblock %}
+
+{% block content %}
+<div class="relative min-h-screen px-4 sm:px-6 lg:px-8 py-10 space-y-12 overflow-hidden">
+  
+  <!-- Header -->
+  <div class="relative z-10 text-center space-y-2 max-w-xl mx-auto">
+    <span class="inline-flex items-center gap-2 px-4 py-1 rounded-full text-xs font-bold tracking-wider bg-ochre-100 text-ochre-800 border border-ochre-200 uppercase">
+      🏆 Academic Recognition
+    </span>
+    <h1 class="text-3xl sm:text-4xl font-serif font-black text-charcoal-900 tracking-tight">Top Scholar Rankings</h1>
+    <p class="text-xs sm:text-sm text-charcoal-600 font-medium leading-relaxed">
+      Honoring scholars actively uploading lecture notes and peer resources across departments.
+    </p>
+  </div>
+
+  <!-- Top 3 Podium Pebble Cards -->
+  <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+    {% for contributor in leaders|slice:":3" %}
+    <div class="pebble-card p-7 flex flex-col items-center text-center relative overflow-hidden transition-all duration-300 hover:-translate-y-1.5 {% if forloop.counter == 1 %}border-ochre-300 md:order-2 md:-translate-y-4 shadow-pebble-hover bg-[#FFFDF9]{% elif forloop.counter == 2 %}border-sage-300 md:order-1{% else %}border-terracotta-300 md:order-3{% endif %}">
+      
+      <!-- Rank Badge -->
+      <div class="mb-4">
+        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider {% if forloop.counter == 1 %}bg-ochre-100 text-ochre-800 border border-ochre-200{% elif forloop.counter == 2 %}bg-sage-100 text-sage-800 border border-sage-200{% else %}bg-terracotta-100 text-terracotta-800 border border-terracotta-200{% endif %}">
+          {% if forloop.counter == 1 %}🥇 1st Rank{% elif forloop.counter == 2 %}🥈 2nd Rank{% else %}🥉 3rd Rank{% endif %}
+        </span>
+      </div>
+
+      <!-- Avatar -->
+      <div class="relative mb-4">
+        {% if contributor.avatar %}
+          <img src="{{ contributor.avatar.url }}" alt="{{ contributor.username }}" class="h-20 w-20 rounded-full object-cover border-4 {% if forloop.counter == 1 %}border-ochre-300{% elif forloop.counter == 2 %}border-sage-300{% else %}border-terracotta-300{% endif %} shadow-sm">
+        {% else %}
+          <div class="h-20 w-20 rounded-full bg-gradient-to-tr from-botanical-600 to-sage-500 text-white flex items-center justify-center font-bold text-2xl uppercase border-4 {% if forloop.counter == 1 %}border-ochre-300{% elif forloop.counter == 2 %}border-sage-300{% else %}border-terracotta-300{% endif %} shadow-sm">
+            {{ contributor.username|slice:":1" }}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Name & Bio -->
+      <a href="{% url 'user_profile' contributor.id %}" class="text-lg font-serif font-black text-charcoal-900 hover:text-botanical-700 transition-colors">
+        {{ contributor.username }}
+      </a>
+      <span class="text-xs text-charcoal-500 font-medium mt-0.5">
+        {{ contributor.branch|default:"Scholar" }} • Sem {{ contributor.semester|default:"1" }}
+      </span>
+
+      <!-- Stats Pill -->
+      <div class="w-full mt-6 pt-4 border-t border-cream-200 flex items-center justify-around text-xs">
+        <div>
+          <span class="text-charcoal-400 block text-[10px] uppercase font-bold">Uploads</span>
+          <span class="font-bold text-charcoal-800">{{ contributor.total_uploads|default:0 }}</span>
+        </div>
+        <div class="h-6 w-[1px] bg-cream-300"></div>
+        <div>
+          <span class="text-charcoal-400 block text-[10px] uppercase font-bold">Points</span>
+          <span class="font-bold text-botanical-700">{{ contributor.points }} pts</span>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-span-3 text-center py-10 pebble-card text-xs text-charcoal-500">No contributors ranked yet.</div>
+    {% endfor %}
+  </div>
+
+  <!-- Table for Remaining Ranks (4th onwards) -->
+  {% if leaders|length > 3 %}
+  <div class="max-w-4xl mx-auto pebble-card overflow-hidden shadow-pebble relative z-10 text-left">
+    <div class="p-5 border-b border-cream-200 flex items-center justify-between">
+      <span class="text-xs font-serif font-black uppercase tracking-wider text-charcoal-900">All Ranked Scholars</span>
+      <span class="text-xs text-charcoal-500 font-medium">{{ leaders|length }} members listed</span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-cream-100 text-charcoal-500 uppercase font-bold text-[10px] tracking-wider">
+          <tr>
+            <th class="py-3 px-6">Rank</th>
+            <th class="py-3 px-6">Contributor</th>
+            <th class="py-3 px-6">Department</th>
+            <th class="py-3 px-6 text-center">Uploads</th>
+            <th class="py-3 px-6 text-right">Points</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-cream-200">
+          {% for contributor in leaders|slice:"3:" %}
+          <tr class="hover:bg-cream-100/60 transition-colors">
+            <td class="py-4 px-6 font-bold text-charcoal-400">
+              #{{ forloop.counter|add:3 }}
+            </td>
+            <td class="py-4 px-6">
+              <a href="{% url 'user_profile' contributor.id %}" class="flex items-center gap-3 group">
+                {% if contributor.avatar %}
+                  <img src="{{ contributor.avatar.url }}" alt="{{ contributor.username }}" class="h-8 w-8 rounded-full object-cover">
+                {% else %}
+                  <div class="h-8 w-8 rounded-full bg-sage-100 text-sage-800 flex items-center justify-center font-bold text-xs uppercase">
+                    {{ contributor.username|slice:":1" }}
+                  </div>
+                {% endif %}
+                <span class="font-bold text-charcoal-800 group-hover:text-botanical-700 transition-colors">{{ contributor.username }}</span>
+              </a>
+            </td>
+            <td class="py-4 px-6 text-charcoal-600">
+              {{ contributor.branch|default:"Scholar" }} (Sem {{ contributor.semester|default:"-" }})
+            </td>
+            <td class="py-4 px-6 text-center font-bold text-charcoal-700">
+              {{ contributor.total_uploads|default:0 }}
+            </td>
+            <td class="py-4 px-6 text-right font-bold text-botanical-700">
+              {{ contributor.points }} pts
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

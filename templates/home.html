@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}SmartShare - Organic College Study Vault & Peer Lounge{% endblock %}
+
+{% block content %}
+<div class="relative min-h-screen flex flex-col space-y-16 pb-16 overflow-hidden">
+
+  <!-- Hero Section -->
+  <section class="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 md:pt-20 text-center">
+    <div class="max-w-3xl mx-auto space-y-6">
+      
+      <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider bg-sage-100 text-sage-800 border border-sage-200 uppercase shadow-sm">
+        <span class="h-2 w-2 rounded-full bg-botanical-500 animate-pulse"></span>
+        Organic Knowledge Vault & Peer Lounge
+      </span>
+      
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-serif font-black tracking-tight leading-[1.15] text-charcoal-900">
+        The Organic College <br class="hidden sm:inline" />
+        <span class="text-botanical-600 italic">
+          Study Vault
+        </span>
+      </h1>
+
+      <p class="text-sm sm:text-base text-charcoal-600 max-w-2xl mx-auto leading-relaxed font-medium">
+        Discover lecture notes, syllabus blueprints, and past semester papers shared by college peers, powered by your 24/7 SmartBot AI academic guide.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center pt-2">
+        <a
+          href="{% url 'feed' %}"
+          class="btn-botanical w-full sm:w-auto px-8 py-3.5 text-xs font-bold rounded-full flex items-center justify-center gap-2 shadow-pebble"
+        >
+          <span>Explore Vault Notes</span>
+          <i class="fas fa-arrow-right text-[10px]"></i>
+        </a>
+        <a
+          href="{% url 'upload' %}"
+          class="w-full sm:w-auto px-8 py-3.5 bg-[#FFFDF9] hover:bg-cream-200/80 text-charcoal-800 font-bold text-xs rounded-full border border-cream-300 shadow-pebble transition-all flex items-center justify-center gap-2"
+        >
+          <i class="fas fa-cloud-upload-alt text-botanical-600"></i>
+          <span>Share Resource</span>
+        </a>
+      </div>
+
+      <!-- Organic Trust & Feature Badges -->
+      <div class="pt-4 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-charcoal-600 font-medium">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-check-circle text-botanical-600 text-sm"></i>
+          <span>Community Moderated</span>
+        </div>
+        <div class="hidden sm:block h-1 w-1 rounded-full bg-cream-400"></div>
+        <div class="flex items-center gap-2">
+          <i class="fas fa-shield-alt text-sage-600 text-sm"></i>
+          <span>100% Free Peer Access</span>
+        </div>
+        <div class="hidden sm:block h-1 w-1 rounded-full bg-cream-400"></div>
+        <div class="flex items-center gap-2">
+          <i class="fas fa-robot text-ochre-600 text-sm"></i>
+          <span>AI Study Companion</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Top Contributors Section -->
+  <section class="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
+    <div class="mb-6 text-left">
+      <h2 class="text-2xl font-serif font-black text-charcoal-900 tracking-tight">Top Scholars & Contributors</h2>
+      <p class="text-xs text-charcoal-600 font-medium mt-0.5">Recognizing students actively sharing verified course materials.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {% for contributor in top_contributors|slice:":3" %}
+      <div class="pebble-card p-6 flex items-center gap-4 text-left">
+        {% if contributor.avatar %}
+          <img src="{{ contributor.avatar.url }}" alt="{{ contributor.username }}" class="h-14 w-14 rounded-full object-cover border-2 border-botanical-300 shadow-sm flex-shrink-0">
+        {% else %}
+          <div class="h-14 w-14 rounded-full bg-gradient-to-tr from-botanical-600 to-sage-500 text-white flex items-center justify-center font-bold text-xl uppercase shadow-sm flex-shrink-0">
+            {{ contributor.username|slice:":1" }}
+          </div>
+        {% endif %}
+        <div class="space-y-0.5 truncate">
+          <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider {% if forloop.counter == 1 %}bg-ochre-100 text-ochre-800 border border-ochre-200{% elif forloop.counter == 2 %}bg-sage-100 text-sage-800 border border-sage-200{% else %}bg-terracotta-100 text-terracotta-800 border border-terracotta-200{% endif %}">
+            {% if forloop.counter == 1 %}🥇 1st Rank{% elif forloop.counter == 2 %}🥈 2nd Rank{% else %}🥉 3rd Rank{% endif %}
+          </span>
+          <a href="{% url 'user_profile' contributor.id %}" class="text-base font-serif font-black text-charcoal-900 block hover:text-botanical-700 truncate">
+            {{ contributor.username }}
+          </a>
+          <span class="text-xs text-charcoal-500 block truncate">
+            {{ contributor.branch|default:"Scholar" }} • {{ contributor.total_uploads|default:0 }} uploads
+          </span>
+          <span class="text-xs font-bold text-botanical-700 block">
+            {{ contributor.points }} Points
+          </span>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-span-3 text-center py-10 pebble-card text-xs text-charcoal-500">No contributors yet. Upload notes to become the first!</div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Featured Resources Section -->
+  <section class="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 flex-grow">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8">
+      <div class="text-left">
+        <h2 class="text-2xl font-serif font-black text-charcoal-900 tracking-tight">Curated Courseware</h2>
+        <p class="text-xs text-charcoal-600 font-medium mt-0.5">High-rated semester materials reviewed by college peers.</p>
+      </div>
+
+      <!-- Pebble Tab Selector -->
+      <div class="flex items-center bg-cream-200 border border-cream-300 rounded-full p-1 text-xs font-bold transition-all">
+        <button
+          onclick="switchHomeTab('trending')"
+          id="tab-btn-trending"
+          class="px-5 py-2 rounded-full transition-all bg-[#FFFDF9] text-charcoal-900 shadow-sm cursor-pointer"
+        >
+          Trending
+        </button>
+        <button
+          onclick="switchHomeTab('new_arrivals')"
+          id="tab-btn-new_arrivals"
+          class="px-5 py-2 rounded-full transition-all text-charcoal-600 hover:text-charcoal-900 cursor-pointer"
+        >
+          New Arrivals
+        </button>
+      </div>
+    </div>
+
+    <!-- Trending Resources Grid -->
+    <div id="grid-trending" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {% for res in trending_resources|slice:":4" %}
+        {% include 'components/resource_card.html' with res=res %}
+      {% empty %}
+        <div class="col-span-4 text-center py-16 pebble-card p-8">
+          <i class="fas fa-leaf text-4xl text-sage-400 mb-3 block"></i>
+          <h3 class="text-sm font-serif font-bold text-charcoal-800">No courseware uploaded yet</h3>
+          <p class="text-xs text-charcoal-500 mt-1">Be the first to upload and share study materials for your branch!</p>
+          <a href="{% url 'upload' %}" class="btn-botanical inline-block mt-4 px-6 py-2.5 text-xs font-bold rounded-full">
+            Upload Notes
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- New Arrivals Resources Grid (Hidden by default) -->
+    <div id="grid-new_arrivals" class="hidden grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {% for res in new_resources|slice:":4" %}
+        {% include 'components/resource_card.html' with res=res %}
+      {% empty %}
+        <div class="col-span-4 text-center py-16 pebble-card p-8">
+          <i class="fas fa-book text-4xl text-sage-400 mb-3 block"></i>
+          <h3 class="text-sm font-serif font-bold text-charcoal-800">No new arrivals yet</h3>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- View All Button -->
+    <div class="flex justify-center pt-8">
+      <a
+        href="{% url 'feed' %}"
+        class="px-8 py-3 bg-[#FFFDF9] hover:bg-cream-200 border border-cream-300 text-charcoal-800 text-xs font-bold rounded-full shadow-pebble transition-all flex items-center gap-2"
+      >
+        <span>Browse All Vault Courseware</span>
+        <i class="fas fa-arrow-right text-[10px]"></i>
+      </a>
+    </div>
+  </section>
+
+  <!-- Organic Contributor CTA Banner -->
+  <section class="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
+    <div class="relative rounded-[2.5rem] overflow-hidden bg-gradient-to-tr from-botanical-700 to-botanical-600 p-8 sm:p-12 shadow-pebble flex flex-col md:flex-row justify-between items-center gap-8 text-left text-white">
+      
+      <!-- Fluid Blob Accents in Banner -->
+      <div class="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/10 blur-2xl pointer-events-none"></div>
+      <div class="absolute -bottom-12 -left-12 w-64 h-64 rounded-full bg-sage-400/20 blur-2xl pointer-events-none"></div>
+
+      <div class="space-y-3 max-w-xl relative z-10">
+        <span class="inline-block text-[10px] font-extrabold uppercase tracking-widest bg-white/15 border border-white/25 px-3 py-1 rounded-full">
+          Academic Knowledge Sharing
+        </span>
+        <h3 class="text-2xl sm:text-3xl font-serif font-black leading-tight">
+          Help your college peers excel. Share notes, earn contributor points, and climb the rankings.
+        </h3>
+        <p class="text-xs text-cream-200 leading-relaxed font-medium">
+          Every verified upload awards points toward your campus profile.
+        </p>
+        <div class="pt-2">
+          <a
+            href="{% url 'upload' %}"
+            class="inline-flex items-center gap-2 bg-[#FFFDF9] text-botanical-800 hover:bg-cream-100 text-xs font-bold px-7 py-3 rounded-full shadow-md transition-all active:scale-95"
+          >
+            <span>Start Sharing Today</span>
+            <i class="fas fa-arrow-right text-[10px]"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="relative z-10 flex-shrink-0">
+        <div class="h-28 w-28 rounded-full bg-white/10 border-2 border-white/25 flex items-center justify-center text-4xl shadow-inner">
+          <i class="fas fa-seedling text-cream-100"></i>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<script>
+  function switchHomeTab(tab) {
+    const gridTrending = document.getElementById('grid-trending');
+    const gridNew = document.getElementById('grid-new_arrivals');
+    const btnTrending = document.getElementById('tab-btn-trending');
+    const btnNew = document.getElementById('tab-btn-new_arrivals');
+
+    if (tab === 'trending') {
+      gridTrending.classList.remove('hidden');
+      gridNew.classList.add('hidden');
+      btnTrending.className = "px-5 py-2 rounded-full transition-all bg-[#FFFDF9] text-charcoal-900 shadow-sm cursor-pointer";
+      btnNew.className = "px-5 py-2 rounded-full transition-all text-charcoal-600 hover:text-charcoal-900 cursor-pointer";
+    } else {
+      gridTrending.classList.add('hidden');
+      gridNew.classList.remove('hidden');
+      gridNew.classList.add('grid');
+      btnNew.className = "px-5 py-2 rounded-full transition-all bg-[#FFFDF9] text-charcoal-900 shadow-sm cursor-pointer";
+      btnTrending.className = "px-5 py-2 rounded-full transition-all text-charcoal-600 hover:text-charcoal-900 cursor-pointer";
+    }
+  }
+</script>
+{% endblock %}

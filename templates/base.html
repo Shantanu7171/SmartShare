@@ -1,0 +1,177 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SmartShare - College Resource Vault & Peer Lounge{% endblock %}</title>
+  <meta name="description" content="Organic, collaborative college study materials vault, notes sharing, and SmartBot AI companion.">
+  
+  <!-- Google Fonts: Fraunces (Organic Display Serif) & Quicksand / Urbanist (Humanist Sans) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&family=Quicksand:wght@400;500;600;700&family=Urbanist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Tailwind CSS CDN with Organic & Blob Design Tokens -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Fraunces', 'serif'],
+            display: ['Fraunces', 'serif'],
+            sans: ['Quicksand', 'Urbanist', 'sans-serif'],
+          },
+          colors: {
+            // Botanical & Fruit Primary Hues
+            botanical: {
+              50: '#F0F6F2',
+              100: '#E0EDE3',
+              200: '#C2DBD6',
+              300: '#8FBFA2',
+              400: '#5A9470',
+              500: '#3D7A53',
+              600: '#346845',
+              700: '#2A5538',
+              800: '#20422B',
+              900: '#173622',
+            },
+            // Soft Terracotta & Warm Fruit Tones
+            terracotta: {
+              50: '#FDF5F3',
+              100: '#FCEBE6',
+              200: '#F7D4CC',
+              300: '#F0B9AC',
+              400: '#E28B74',
+              500: '#D97D64',
+              600: '#C3634B',
+              700: '#A44D37',
+            },
+            // Warm Mineral Sand & Ochre
+            ochre: {
+              50: '#FDF9F2',
+              100: '#FAF2E3',
+              200: '#F4E3C2',
+              300: '#EDD19A',
+              400: '#D4A359',
+              500: '#C79344',
+              600: '#AB7831',
+            },
+            // Soft Eucalyptus / Sage Green
+            sage: {
+              50: '#F4F7F5',
+              100: '#E6ECE8',
+              200: '#C8D8CE',
+              300: '#A9C2B2',
+              400: '#8EA891',
+              500: '#739177',
+              600: '#5D7861',
+            },
+            // Stepped Cream & Mineral Surfaces (base-100, base-200, base-300)
+            cream: {
+              50: '#FCFAF7',
+              100: '#FAF7F2',
+              200: '#F3EFE6',
+              300: '#EAE3D5',
+              400: '#DDD4C3',
+              500: '#C8BCA6',
+            },
+            // Deep Forest Charcoal & Mineral Slate for Calm Legibility
+            charcoal: {
+              500: '#687262',
+              600: '#4E5549',
+              700: '#3D4439',
+              800: '#2B3026',
+              900: '#1C2118',
+            }
+          },
+          borderRadius: {
+            'pebble-sm': '1rem',
+            'pebble': '1.75rem',
+            'pebble-lg': '2.25rem',
+            'pebble-xl': '3rem',
+          },
+          boxShadow: {
+            'pebble': '0 16px 36px -8px rgba(52, 104, 69, 0.08), 0 4px 12px -2px rgba(0,0,0,0.03)',
+            'pebble-hover': '0 20px 40px -6px rgba(52, 104, 69, 0.14), 0 6px 16px -2px rgba(0,0,0,0.04)',
+            'pebble-inner': 'inset 0 2px 6px rgba(0, 0, 0, 0.04)',
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Custom Organic CSS -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="flex flex-col min-h-screen bg-cream-100 text-charcoal-900 font-sans selection:bg-botanical-500/20 selection:text-botanical-900 relative overflow-x-hidden">
+  {% csrf_token %}
+
+  <!-- Ambient Organic Background Blobs (Soft Fluid Accents) -->
+  <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden" aria-hidden="true">
+    <!-- Top-left Ochre / Sand Blob -->
+    <div class="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-ochre-300/35 filter blur-[75px] organic-blob-morph"></div>
+    <!-- Top-right Sage Green Blob -->
+    <div class="absolute top-12 -right-20 w-80 h-80 rounded-full bg-sage-300/40 filter blur-[70px] organic-blob-morph-delayed"></div>
+    <!-- Bottom-right Terracotta / Peach Blob -->
+    <div class="absolute -bottom-24 -right-24 w-[28rem] h-[28rem] rounded-full bg-terracotta-300/35 filter blur-[85px] organic-blob-morph"></div>
+    <!-- Bottom-left Botanical Tint Blob -->
+    <div class="absolute bottom-20 -left-20 w-80 h-80 rounded-full bg-botanical-200/30 filter blur-[70px] organic-blob-morph-delayed"></div>
+  </div>
+
+  <!-- Top Navigation -->
+  {% include 'components/navbar.html' %}
+
+  <!-- Main View Area -->
+  <main class="flex-grow relative">
+    <!-- Server-rendered Flash Messages -->
+    {% if messages %}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 w-full" id="django-flash-messages">
+      {% for message in messages %}
+        <div class="mb-3 p-4 rounded-pebble border flex items-center justify-between text-xs font-semibold shadow-pebble transition-all duration-200 {% if message.tags == 'error' %}bg-terracotta-50 text-terracotta-700 border-terracotta-200{% elif message.tags == 'info' %}bg-sage-50 text-sage-700 border-sage-200{% else %}bg-botanical-50 text-botanical-800 border-botanical-200{% endif %}">
+          <div class="flex items-center gap-3">
+            <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle text-terracotta-500 text-sm{% elif message.tags == 'info' %}fa-info-circle text-sage-500 text-sm{% else %}fa-check-circle text-botanical-600 text-sm{% endif %}"></i>
+            <span class="leading-relaxed">{{ message }}</span>
+          </div>
+          <button type="button" onclick="this.closest('div.mb-3').remove()" class="text-charcoal-500 hover:text-charcoal-800 p-1.5 rounded-full hover:bg-black/5 transition-colors">
+            <i class="fas fa-times text-xs"></i>
+          </button>
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Reusable Organic Footer -->
+  {% include 'components/footer.html' %}
+
+  <!-- Modals Insertion Block (outside main stacking context) -->
+  {% block modals %}{% endblock %}
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed top-5 right-5 z-[120] flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Main JavaScript File -->
+  <script src="{% static 'js/main.js' %}"></script>
+
+  <!-- Django Messages to Toasts Bridge -->
+  {% if messages %}
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      {% for message in messages %}
+        window.showToast("{{ message|escapejs }}", "{% if message.tags == 'error' %}error{% elif message.tags == 'info' %}info{% else %}success{% endif %}");
+      {% endfor %}
+    });
+  </script>
+  {% endif %}
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

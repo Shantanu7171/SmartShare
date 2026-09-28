@@ -1,0 +1,191 @@
+<header class="sticky top-2 z-40 w-full px-3 sm:px-6 transition-all duration-300">
+  <div class="max-w-7xl mx-auto bg-[#FFFDF9]/90 border border-cream-300 rounded-3xl sm:rounded-full backdrop-blur-md px-4 sm:px-6 py-2.5 shadow-pebble">
+    <div class="flex items-center justify-between gap-3">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3">
+        <a href="{% url 'home' %}" class="flex items-center gap-2.5 group">
+          <div class="h-10 w-10 rounded-2xl bg-gradient-to-tr from-botanical-600 to-sage-500 flex items-center justify-center text-white shadow-md shadow-botanical-600/20 group-hover:scale-105 transition-transform duration-300">
+            <i class="fas fa-leaf text-sm"></i>
+          </div>
+          <div class="text-left">
+            <span class="text-lg font-serif font-black tracking-tight text-charcoal-900 leading-none block">
+              Smart<span class="text-botanical-600">Share</span>
+            </span>
+            <span class="text-[9px] font-bold uppercase tracking-widest text-sage-500 leading-none block mt-0.5">
+              Organic Vault
+            </span>
+          </div>
+        </a>
+      </div>
+
+      <!-- Center Search Bar (Desktop) -->
+      <div class="hidden md:flex items-center flex-1 max-w-xs mx-4">
+        <form action="{% url 'feed' %}" method="GET" class="relative w-full">
+          <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-sage-400 text-xs pointer-events-none"></i>
+          <input 
+            type="text" 
+            name="search" 
+            placeholder="Search notes, branches, topics..." 
+            value="{{ request.GET.search|default:'' }}"
+            class="w-full pl-9 pr-4 py-2 text-xs bg-cream-200/80 border border-cream-300 rounded-full text-charcoal-900 placeholder-charcoal-500/60 focus:outline-none focus:border-botanical-500 focus:bg-white transition-all shadow-pebble-inner"
+          >
+        </form>
+      </div>
+
+      <!-- Desktop Nav Links -->
+      <nav class="hidden lg:flex items-center gap-1.5">
+        <a href="{% url 'feed' %}" class="px-4 py-2 rounded-full text-xs font-bold transition-all {% if request.resolver_match.url_name == 'feed' or request.resolver_match.url_name == 'dashboard' %}bg-botanical-100 text-botanical-800 shadow-sm{% else %}text-charcoal-700 hover:text-botanical-700 hover:bg-cream-200/60{% endif %}">
+          Feed
+        </a>
+        <a href="{% url 'upload' %}" class="px-4 py-2 rounded-full text-xs font-bold transition-all {% if request.resolver_match.url_name == 'upload' %}bg-botanical-100 text-botanical-800 shadow-sm{% else %}text-charcoal-700 hover:text-botanical-700 hover:bg-cream-200/60{% endif %}">
+          Upload
+        </a>
+        <a href="{% url 'chat' %}" class="px-4 py-2 rounded-full text-xs font-bold transition-all {% if request.resolver_match.url_name == 'chat' %}bg-botanical-100 text-botanical-800 shadow-sm{% else %}text-charcoal-700 hover:text-botanical-700 hover:bg-cream-200/60{% endif %}">
+          <i class="fas fa-robot text-botanical-600 mr-1 text-[11px]"></i>
+          SmartBot
+        </a>
+        <a href="{% url 'ai_quiz' %}" class="px-4 py-2 rounded-full text-xs font-bold transition-all {% if request.resolver_match.url_name == 'ai_quiz' %}bg-botanical-100 text-botanical-800 shadow-sm{% else %}text-charcoal-700 hover:text-botanical-700 hover:bg-cream-200/60{% endif %}">
+          AI Quiz
+        </a>
+        <a href="{% url 'leaderboard' %}" class="px-4 py-2 rounded-full text-xs font-bold transition-all {% if request.resolver_match.url_name == 'leaderboard' %}bg-botanical-100 text-botanical-800 shadow-sm{% else %}text-charcoal-700 hover:text-botanical-700 hover:bg-cream-200/60{% endif %}">
+          Rankings
+        </a>
+      </nav>
+
+      <!-- Right Controls: User Menu & Actions -->
+      <div class="flex items-center gap-2.5">
+
+        {% if request.user.is_authenticated %}
+        <!-- User Profile Dropdown -->
+        <div class="relative" id="user-dropdown-wrapper">
+          <button 
+            onclick="toggleUserDropdown()"
+            class="flex items-center gap-2 p-1.5 pl-2.5 rounded-full bg-cream-200/80 border border-cream-300 hover:border-botanical-400 transition-colors"
+          >
+            {% if request.user.avatar %}
+              <img src="{{ request.user.avatar.url }}" alt="{{ request.user.username }}" class="h-7 w-7 rounded-full object-cover">
+            {% else %}
+              <div class="h-7 w-7 rounded-full bg-gradient-to-tr from-botanical-600 to-sage-500 text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
+                {{ request.user.username|slice:":1" }}
+              </div>
+            {% endif %}
+            <span class="text-xs font-bold text-charcoal-800 hidden sm:inline">{{ request.user.username }}</span>
+            <i class="fas fa-chevron-down text-[10px] text-sage-500 mr-1"></i>
+          </button>
+
+          <!-- User Menu Dropdown Popover -->
+          <div id="user-popover" class="hidden absolute right-0 mt-2 w-60 bg-[#FFFDF9] border border-cream-300 rounded-[1.75rem] shadow-pebble overflow-hidden z-50 p-2 text-left animate-in fade-in zoom-in-95">
+            <div class="p-3 border-b border-cream-200 mb-1.5">
+              <p class="text-xs font-bold text-charcoal-900 truncate">{{ request.user.username }}</p>
+              <p class="text-[10px] text-charcoal-500 truncate">{{ request.user.email }}</p>
+              <span class="inline-block mt-1.5 px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-botanical-100 text-botanical-800 border border-botanical-200">
+                {{ request.user.role }} • {{ request.user.points }} pts
+              </span>
+            </div>
+
+            <a href="{% url 'profile' %}" class="flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold text-charcoal-700 hover:bg-cream-100 hover:text-botanical-700 rounded-2xl transition-colors">
+              <i class="fas fa-user text-xs w-4 text-botanical-600"></i>
+              <span>My Profile</span>
+            </a>
+
+            {% if request.user.role == 'admin' or request.user.is_superuser %}
+            <a href="{% url 'admin_panel' %}" class="flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold text-charcoal-700 hover:bg-cream-100 hover:text-botanical-700 rounded-2xl transition-colors">
+              <i class="fas fa-shield-alt text-xs w-4 text-ochre-500"></i>
+              <span>Admin Panel</span>
+            </a>
+            {% endif %}
+
+            {% if request.user.role == 'faculty' %}
+            <a href="{% url 'faculty_panel' %}" class="flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold text-charcoal-700 hover:bg-cream-100 hover:text-botanical-700 rounded-2xl transition-colors">
+              <i class="fas fa-graduation-cap text-xs w-4 text-sage-600"></i>
+              <span>Faculty Panel</span>
+            </a>
+            {% endif %}
+
+            <div class="border-t border-cream-200 my-1 pt-1">
+              <a href="{% url 'logout' %}" class="flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold text-terracotta-600 hover:bg-terracotta-50 rounded-2xl transition-colors">
+                <i class="fas fa-sign-out-alt text-xs w-4"></i>
+                <span>Sign Out</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {% else %}
+        <!-- Guest Navigation Buttons -->
+        <a href="{% url 'login' %}" class="px-4 py-2 rounded-full text-xs font-bold text-charcoal-700 hover:text-botanical-700 transition-colors">
+          Sign In
+        </a>
+        <a href="{% url 'signup' %}" class="px-5 py-2 rounded-full bg-botanical-600 hover:bg-botanical-700 text-white text-xs font-bold shadow-md shadow-botanical-600/20 active:scale-95 transition-all">
+          Get Started
+        </a>
+        {% endif %}
+
+        <!-- Mobile Menu Toggle Button -->
+        <button 
+          onclick="toggleMobileMenu()" 
+          id="mobile-menu-btn"
+          class="lg:hidden p-2 rounded-full bg-cream-200 text-charcoal-700 hover:text-botanical-700 transition-colors"
+          aria-label="Toggle navigation menu"
+        >
+          <i class="fas fa-bars text-sm"></i>
+        </button>
+
+      </div>
+
+    </div>
+
+    <!-- Mobile Navigation Drawer -->
+    <div id="mobile-menu" class="hidden lg:hidden border-t border-cream-200 pt-3 pb-2 mt-2 space-y-1.5 text-left">
+      <form action="{% url 'feed' %}" method="GET" class="relative w-full mb-3 px-1">
+        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-sage-400 text-xs pointer-events-none"></i>
+        <input 
+          type="text" 
+          name="search" 
+          placeholder="Search notes, branches, topics..." 
+          value="{{ request.GET.search|default:'' }}"
+          class="w-full pl-9 pr-4 py-2 text-xs bg-cream-200 border border-cream-300 rounded-full text-charcoal-900 placeholder-charcoal-500 focus:outline-none focus:border-botanical-500"
+        >
+      </form>
+
+      <a href="{% url 'feed' %}" class="block px-4 py-2 rounded-2xl text-xs font-bold text-charcoal-700 hover:bg-botanical-50 hover:text-botanical-700 transition-colors">
+        <i class="fas fa-layer-group w-5 text-botanical-600"></i> Courseware Feed
+      </a>
+      <a href="{% url 'upload' %}" class="block px-4 py-2 rounded-2xl text-xs font-bold text-charcoal-700 hover:bg-botanical-50 hover:text-botanical-700 transition-colors">
+        <i class="fas fa-cloud-upload-alt w-5 text-botanical-600"></i> Share Notes
+      </a>
+      <a href="{% url 'chat' %}" class="block px-4 py-2 rounded-2xl text-xs font-bold text-charcoal-700 hover:bg-botanical-50 hover:text-botanical-700 transition-colors">
+        <i class="fas fa-robot w-5 text-botanical-600"></i> SmartBot Lounge
+      </a>
+      <a href="{% url 'ai_quiz' %}" class="block px-4 py-2 rounded-2xl text-xs font-bold text-charcoal-700 hover:bg-botanical-50 hover:text-botanical-700 transition-colors">
+        <i class="fas fa-brain w-5 text-botanical-600"></i> AI Practice Quiz
+      </a>
+      <a href="{% url 'leaderboard' %}" class="block px-4 py-2 rounded-2xl text-xs font-bold text-charcoal-700 hover:bg-botanical-50 hover:text-botanical-700 transition-colors">
+        <i class="fas fa-trophy w-5 text-ochre-500"></i> Contributor Rankings
+      </a>
+    </div>
+
+  </div>
+</header>
+
+<script>
+  function toggleUserDropdown() {
+    const popover = document.getElementById('user-popover');
+    if (popover) popover.classList.toggle('hidden');
+  }
+
+  function toggleMobileMenu() {
+    const menu = document.getElementById('mobile-menu');
+    if (menu) menu.classList.toggle('hidden');
+  }
+
+  // Close dropdown on click outside
+  document.addEventListener('click', (e) => {
+    const wrapper = document.getElementById('user-dropdown-wrapper');
+    const popover = document.getElementById('user-popover');
+    if (wrapper && popover && !wrapper.contains(e.target)) {
+      popover.classList.add('hidden');
+    }
+  });
+</script>

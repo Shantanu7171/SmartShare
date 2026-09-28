@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}System Administration Portal - SmartShare{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-left">
+  
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EBE4D5] pb-6">
+    <div>
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider bg-[#D4A359]/15 text-[#8F6522] border border-[#D4A359]/30 uppercase">
+        <i class="fas fa-shield-alt"></i> Moderation Dashboard
+      </span>
+      <h1 class="font-serif text-2xl sm:text-3xl font-black text-[#232822] mt-1">System Administration</h1>
+      <p class="text-xs text-[#5C645A]">Audit pending submissions, review study uploads, and moderate platform users.</p>
+    </div>
+
+    <!-- Tab Buttons -->
+    <div class="flex items-center gap-2 bg-[#F3EFE6] p-1.5 rounded-full border border-[#E2DBD0]">
+      <button onclick="switchAdminTab('pending')" id="tab-btn-pending" class="px-4 py-1.5 text-xs font-bold rounded-full bg-[#FFFDF9] text-[#232822] shadow-sm transition-all">
+        Pending Approvals ({{ pending_count }})
+      </button>
+      <button onclick="switchAdminTab('all')" id="tab-btn-all" class="px-4 py-1.5 text-xs font-bold rounded-full text-[#5C645A] hover:text-[#232822] transition-all">
+        All Resources ({{ all_count }})
+      </button>
+      <button onclick="switchAdminTab('users')" id="tab-btn-users" class="px-4 py-1.5 text-xs font-bold rounded-full text-[#5C645A] hover:text-[#232822] transition-all">
+        Users Directory ({{ users_count }})
+      </button>
+    </div>
+  </div>
+
+  <!-- SECTION 1: Pending Approvals -->
+  <div id="admin-sec-pending" class="space-y-4">
+    {% if pending_resources %}
+    <div class="pebble-card overflow-hidden divide-y divide-[#EBE4D5]">
+      {% for res in pending_resources %}
+      <div class="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 hover:bg-[#FAF7F2] transition-colors">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#D4A359]/20 text-[#8F6522]">
+              Pending Review
+            </span>
+            <span class="text-xs text-[#788275]">{{ res.branch }} • Sem {{ res.semester }}</span>
+          </div>
+          <h3 class="font-serif text-base font-bold text-[#232822]">{{ res.title }}</h3>
+          <p class="text-xs text-[#5C645A]">
+            Subject: <strong>{{ res.subject }}</strong> • Uploaded by: <a href="{% url 'user_profile' res.uploaded_by.id %}" class="text-[#346845] font-semibold hover:underline">{{ res.uploaded_by.username }}</a>
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2 w-full md:w-auto">
+          <a href="{% url 'resource_detail' res.id %}" target="_blank" class="px-4 py-2 bg-[#F3EFE6] text-[#232822] font-bold text-xs rounded-full hover:bg-[#EAE3D5] transition-colors">
+            Inspect
+          </a>
+          <form method="POST" action="{% url 'admin_approve_resource' res.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="status" value="approved">
+            <button type="submit" class="btn-botanical px-4 py-2 text-xs font-bold rounded-full shadow-sm transition-colors flex items-center gap-1.5">
+              <i class="fas fa-check"></i> Approve
+            </button>
+          </form>
+          <form method="POST" action="{% url 'admin_approve_resource' res.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="status" value="rejected">
+            <button type="submit" class="px-4 py-2 bg-[#E28B74] hover:bg-[#D47961] text-white font-bold text-xs rounded-full shadow-sm transition-colors flex items-center gap-1.5">
+              <i class="fas fa-times"></i> Reject
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-16 pebble-card p-8">
+      <div class="w-16 h-16 rounded-full bg-[#346845]/10 text-[#346845] flex items-center justify-center mx-auto mb-4 text-2xl">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <h3 class="font-serif text-base font-bold text-[#232822]">All caught up!</h3>
+      <p class="text-xs text-[#788275] mt-1">There are no pending study materials waiting for approval.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- SECTION 2: All Resources -->
+  <div id="admin-sec-all" class="hidden space-y-4">
+    <div class="pebble-card overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-[#F3EFE6] text-[#788275] uppercase font-bold text-[10px] tracking-wider">
+            <tr>
+              <th class="py-3 px-6">Resource</th>
+              <th class="py-3 px-6">Department</th>
+              <th class="py-3 px-6">Uploader</th>
+              <th class="py-3 px-6">Status</th>
+              <th class="py-3 px-6 text-center">Downloads</th>
+              <th class="py-3 px-6 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#EBE4D5]">
+            {% for res in all_resources %}
+            <tr class="hover:bg-[#FAF7F2] transition-colors">
+              <td class="py-4 px-6 font-bold text-[#232822]">
+                <a href="{% url 'resource_detail' res.id %}" class="hover:text-[#346845]">{{ res.title }}</a>
+              </td>
+              <td class="py-4 px-6 text-[#5C645A]">{{ res.branch }} (Sem {{ res.semester }})</td>
+              <td class="py-4 px-6 text-[#5C645A]">{{ res.uploaded_by.username }}</td>
+              <td class="py-4 px-6">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase {% if res.status == 'approved' %}bg-[#346845]/15 text-[#2D5A3C]{% elif res.status == 'rejected' %}bg-[#E28B74]/20 text-[#8F3F2A]{% else %}bg-[#D4A359]/20 text-[#8F6522]{% endif %}">
+                  {{ res.status }}
+                </span>
+              </td>
+              <td class="py-4 px-6 text-center font-bold text-[#5C645A]">{{ res.downloads }}</td>
+              <td class="py-4 px-6 text-right">
+                <form method="POST" action="{% url 'admin_delete_resource' res.id %}" onsubmit="return confirm('Permanently delete resource?');" class="inline">
+                  {% csrf_token %}
+                  <button type="submit" class="text-[#E28B74] hover:text-[#C5573D] font-bold text-xs p-1">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: Users Directory -->
+  <div id="admin-sec-users" class="hidden space-y-4">
+    <div class="pebble-card overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-[#F3EFE6] text-[#788275] uppercase font-bold text-[10px] tracking-wider">
+            <tr>
+              <th class="py-3 px-6">User</th>
+              <th class="py-3 px-6">Email</th>
+              <th class="py-3 px-6">Role Assignment</th>
+              <th class="py-3 px-6">University Affiliation</th>
+              <th class="py-3 px-6">Department</th>
+              <th class="py-3 px-6 text-center">Points</th>
+              <th class="py-3 px-6 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#EBE4D5]">
+            {% for u in users_list %}
+            <tr class="hover:bg-[#FAF7F2] transition-colors">
+              <td class="py-4 px-6 font-bold text-[#232822]">
+                <a href="{% url 'user_profile' u.id %}" class="hover:text-[#346845]">{{ u.username }}</a>
+              </td>
+              <td class="py-4 px-6 text-[#5C645A]">{{ u.email }}</td>
+              <td class="py-4 px-6">
+                <form method="POST" action="{% url 'admin_update_user_role' u.id %}" class="flex items-center gap-1.5">
+                  {% csrf_token %}
+                  <select name="role" class="px-3 py-1 text-[11px] font-bold rounded-full border border-[#E2DBD0] bg-[#F3EFE6] text-[#232822] cursor-pointer outline-none">
+                    <option value="student" {% if u.role == 'student' %}selected{% endif %}>Student</option>
+                    <option value="faculty" {% if u.role == 'faculty' %}selected{% endif %}>Faculty</option>
+                    <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>Admin</option>
+                  </select>
+                  <input type="hidden" name="university" value="{{ u.university|default:'' }}">
+                  <button type="submit" title="Save Role" class="btn-botanical px-3 py-1 text-[10px] font-bold rounded-full transition-colors">
+                    Save
+                  </button>
+                </form>
+              </td>
+              <td class="py-4 px-6">
+                <form method="POST" action="{% url 'admin_update_user_role' u.id %}" class="flex items-center gap-1.5">
+                  {% csrf_token %}
+                  <input type="hidden" name="role" value="{{ u.role }}">
+                  <input type="text" name="university" value="{{ u.university|default:'' }}" placeholder="Assign University..." class="px-3 py-1 text-[11px] rounded-full border border-[#E2DBD0] bg-[#F3EFE6] text-[#232822] w-36 focus:border-[#346845] outline-none">
+                  <button type="submit" title="Save University" class="px-2.5 py-1 text-[10px] font-bold bg-[#EAE3D5] hover:bg-[#DED5C4] text-[#232822] rounded-full transition-colors">
+                    <i class="fas fa-check"></i>
+                  </button>
+                </form>
+              </td>
+              <td class="py-4 px-6 text-[#5C645A]">{{ u.branch|default:"-" }}</td>
+              <td class="py-4 px-6 text-center font-bold text-[#346845]">{{ u.points }}</td>
+              <td class="py-4 px-6 text-right">
+                {% if u.id != request.user.id %}
+                <form method="POST" action="{% url 'delete_user_admin' u.id %}" onsubmit="return confirm('Permanently remove user {{ u.username }}?');" class="inline">
+                  {% csrf_token %}
+                  <button type="submit" class="text-[#E28B74] hover:text-[#C5573D] font-bold text-xs p-1" title="Delete User">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function switchAdminTab(tab) {
+    document.getElementById('admin-sec-pending').classList.toggle('hidden', tab !== 'pending');
+    document.getElementById('admin-sec-all').classList.toggle('hidden', tab !== 'all');
+    document.getElementById('admin-sec-users').classList.toggle('hidden', tab !== 'users');
+
+    ['pending', 'all', 'users'].forEach(t => {
+      const btn = document.getElementById(`tab-btn-${t}`);
+      if (t === tab) {
+        btn.className = "px-4 py-1.5 text-xs font-bold rounded-full bg-[#FFFDF9] text-[#232822] shadow-sm transition-all";
+      } else {
+        btn.className = "px-4 py-1.5 text-xs font-bold rounded-full text-[#5C645A] hover:text-[#232822] transition-all";
+      }
+    });
+  }
+</script>
+{% endblock %}

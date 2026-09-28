@@ -1,0 +1,5 @@
+# Set default behavior to automatic text conversions.
+* text=auto
+
+# Force bash files to always use LF line endings so they don't break on Linux/Render
+backend/build.sh text eol=lf
